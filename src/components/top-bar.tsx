@@ -6,7 +6,9 @@ export function TopBar() {
     <div className="border-b relative">
       <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
         <SidebarTrigger className="lg:absolute lg:left-6 lg:top-1/2 lg:-translate-y-1/2 transition-none" />
-        <div className="flex items-center gap-2 md:contents">
+        {/* Dummy div to properly space the title */}
+        <div className="xl:hidden hidden lg:block" />
+        <div className="flex items-center gap-2">
           <h1 className="text-xl font-semibold">Personal Assistant</h1>
         </div>
         <ThemeToggle />
