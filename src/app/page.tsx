@@ -45,6 +45,11 @@ import {
 } from "@/components/ai-elements/reasoning";
 import { Loader } from "@/components/ai-elements/loader";
 import { TopBar } from "@/components/top-bar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 const ChatBotDemo = () => {
   const [input, setInput] = useState("");
@@ -71,10 +76,16 @@ const ChatBotDemo = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <TopBar />
-      <div className="max-w-4xl mx-auto p-6 relative size-full flex-1">
-        <div className="flex flex-col h-full">
+    <>
+      <Sidebar>
+        <SidebarContent>
+          {/* Empty for now */}
+        </SidebarContent>
+      </Sidebar>
+      <div className="h-screen flex flex-col w-full">
+        <TopBar />
+        <div className="max-w-4xl mx-auto p-6 relative size-full flex-1">
+          <div className="flex flex-col h-full">
         <Conversation className="h-full">
           <ConversationContent>
             {messages.map((message) => (
@@ -187,9 +198,10 @@ const ChatBotDemo = () => {
             <PromptInputSubmit disabled={!input && !status} status={status} />
           </PromptInputToolbar>
         </PromptInput>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
