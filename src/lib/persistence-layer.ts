@@ -13,13 +13,22 @@ export namespace DB {
     updatedAt: string;
   }
 
+  export interface Memory {
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
   export interface PersistenceData {
     chats: DB.Chat[];
+    memories: DB.Memory[];
   }
 }
 
 // File path for storing the data
-const DATA_FILE_PATH = join(process.cwd(), "data", "chats.local.json");
+const DATA_FILE_PATH = join(process.cwd(), "data", "db.local.json");
 
 /**
  * Ensure the data directory exists
@@ -56,7 +65,8 @@ export async function loadChats(): Promise<DB.Chat[]> {
  */
 export async function saveChats(chats: DB.Chat[]): Promise<void> {
   await ensureDataDirectory();
-  const data: DB.PersistenceData = { chats };
+  const memories = await loadMemories();
+  const data: DB.PersistenceData = { chats, memories };
   await fs.writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
 }
 
@@ -146,4 +156,81 @@ export async function updateChatTitle(
 
   await saveChats(chats);
   return chats[chatIndex]!;
+}
+
+/**
+ * Load all memories from the JSON file
+ */
+export async function loadMemories(): Promise<DB.Memory[]> {
+  try {
+    await ensureDataDirectory();
+    const data = await fs.readFile(DATA_FILE_PATH, "utf-8");
+    const parsed: DB.PersistenceData = JSON.parse(data);
+    return (parsed.memories || []).sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  } catch (error) {
+    // If file doesn't exist or is invalid, return empty array
+    return [];
+  }
+}
+
+/**
+ * Save all memories to the JSON file
+ */
+async function saveMemories(memories: DB.Memory[]): Promise<void> {
+  await ensureDataDirectory();
+  const chats = await loadChats();
+  const data: DB.PersistenceData = { chats, memories };
+  await fs.writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
+}
+
+/**
+ * Get a memory by ID
+ */
+export async function getMemory(memoryId: string): Promise<DB.Memory | null> {
+  const memories = await loadMemories();
+  return memories.find((memory) => memory.id === memoryId) || null;
+}
+
+/**
+ * Create a new memory
+ */
+export async function createMemory(opts: {
+  id: string;
+  title: string;
+  content: string;
+}): Promise<DB.Memory> {
+  const memories = await loadMemories();
+  const now = new Date().toISOString();
+
+  const newMemory: DB.Memory = {
+    id: opts.id,
+    title: opts.title,
+    content: opts.content,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  memories.push(newMemory);
+  await saveMemories(memories);
+
+  return newMemory;
+}
+
+/**
+ * Delete a memory
+ */
+export async function deleteMemory(memoryId: string): Promise<boolean> {
+  const memories = await loadMemories();
+  const initialLength = memories.length;
+  const filteredMemories = memories.filter((memory) => memory.id !== memoryId);
+
+  if (filteredMemories.length === initialLength) {
+    return false; // Memory not found
+  }
+
+  await saveMemories(filteredMemories);
+  return true;
 }
