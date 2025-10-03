@@ -14,7 +14,7 @@ import {
   streamText,
   UIMessage,
 } from "ai";
-import { generateTitle } from "./generate-title";
+import { generateTitleForChat } from "./generate-title";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           transient: true,
         });
 
-        generateTitlePromise = generateTitle(messages)
+        generateTitlePromise = generateTitleForChat(messages)
           .then((title) => {
             return updateChatTitle(chatId, title);
           })

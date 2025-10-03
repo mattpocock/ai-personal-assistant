@@ -1,7 +1,9 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { convertToModelMessages, generateText, UIMessage } from "ai";
 
-export async function generateTitle(messages: UIMessage[]): Promise<string> {
+export async function generateTitleForChat(
+  messages: UIMessage[]
+): Promise<string> {
   const result = await generateText({
     model: anthropic("claude-3-5-haiku-latest"),
     messages: convertToModelMessages(messages),
