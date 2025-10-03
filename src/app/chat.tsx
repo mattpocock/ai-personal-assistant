@@ -41,6 +41,8 @@ import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { Fragment, startTransition, useState } from "react";
+import type { MyMessage } from "./api/chat/route";
+import { useFocusWhenNoChatIdPresent } from "./use-focus-chat-when-new-chat-button-pressed";
 
 export const Chat = (props: { chat: DB.Chat | null }) => {
   const [backupChatId, setBackupChatId] = useState(crypto.randomUUID());
@@ -50,10 +52,20 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
   const chatIdFromSearchParams = searchParams.get("chatId");
 
   const chatIdInUse = chatIdFromSearchParams || backupChatId;
-  const { messages, sendMessage, status, regenerate } = useChat({
+  const { messages, sendMessage, status, regenerate } = useChat<MyMessage>({
     id: chatIdInUse,
     messages: props.chat?.messages || [],
+    onData: (message) => {
+      if (
+        message.type === "data-frontend-action" &&
+        message.data === "refresh-sidebar"
+      ) {
+        router.refresh();
+      }
+    },
   });
+
+  const ref = useFocusWhenNoChatIdPresent(chatIdFromSearchParams);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const hasText = Boolean(message.text);
@@ -185,7 +197,7 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
             <PromptInputTextarea
               onChange={(e) => setInput(e.target.value)}
               value={input}
-              autoFocus
+              ref={ref}
             />
           </PromptInputBody>
           <PromptInputToolbar>

@@ -8,6 +8,8 @@ import {
 import { anthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
   safeValidateUIMessages,
   streamText,
   UIMessage,
@@ -17,6 +19,13 @@ import { generateTitle } from "./generate-title";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+export type MyMessage = UIMessage<
+  never,
+  {
+    "frontend-action": "refresh-sidebar";
+  }
+>;
+
 export async function POST(req: Request) {
   const body: {
     messages: UIMessage[];
@@ -25,7 +34,7 @@ export async function POST(req: Request) {
 
   const chatId = body.id;
 
-  const validatedMessagesResult = await safeValidateUIMessages({
+  const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
     messages: body.messages,
   });
 
@@ -65,18 +74,38 @@ export async function POST(req: Request) {
     await appendToChatMessages(chatId, [mostRecentMessage]);
   }
 
-  const result = streamText({
-    model: anthropic("claude-3-5-haiku-latest"),
-    messages: convertToModelMessages(messages),
+  const stream = createUIMessageStream<MyMessage>({
+    execute: async ({ writer }) => {
+      const result = streamText({
+        model: anthropic("claude-3-5-haiku-latest"),
+        messages: convertToModelMessages(messages),
+      });
+
+      writer.merge(
+        result.toUIMessageStream({
+          sendSources: true,
+          sendReasoning: true,
+        })
+      );
+
+      // If we've generated a new chat, alert the frontend
+      // that it should update the sidebar
+      if (generateTitlePromise) {
+        await generateTitlePromise;
+        writer.write({
+          type: "data-frontend-action",
+          data: "refresh-sidebar",
+          transient: true,
+        });
+      }
+    },
+    onFinish: async ({ responseMessage }) => {
+      await appendToChatMessages(chatId, [responseMessage]);
+    },
   });
 
   // send sources and reasoning back to the client
-  return result.toUIMessageStreamResponse({
-    sendSources: true,
-    sendReasoning: true,
-    onFinish: async ({ responseMessage }) => {
-      await appendToChatMessages(chatId, [responseMessage]);
-      await generateTitlePromise;
-    },
+  return createUIMessageStreamResponse({
+    stream,
   });
 }

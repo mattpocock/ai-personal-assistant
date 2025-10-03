@@ -1,13 +1,14 @@
+import { MyMessage } from "@/app/api/chat/route";
+import type { UIMessage } from "ai";
 import { promises as fs } from "fs";
 import { join } from "path";
-import type { UIMessage } from "ai";
 
 export namespace DB {
   // Types for our persistence layer
   export interface Chat {
     id: string;
     title: string;
-    messages: UIMessage[];
+    messages: MyMessage[];
     createdAt: string;
     updatedAt: string;
   }
@@ -40,7 +41,10 @@ export async function loadChats(): Promise<DB.Chat[]> {
     await ensureDataDirectory();
     const data = await fs.readFile(DATA_FILE_PATH, "utf-8");
     const parsed: DB.PersistenceData = JSON.parse(data);
-    return parsed.chats || [];
+    return (parsed.chats || []).sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
   } catch (error) {
     // If file doesn't exist or is invalid, return empty array
     return [];
@@ -62,7 +66,7 @@ export async function saveChats(chats: DB.Chat[]): Promise<void> {
 export async function createChat(opts: {
   id: string;
   title: string;
-  initialMessages: UIMessage[];
+  initialMessages: MyMessage[];
 }): Promise<DB.Chat> {
   const chats = await loadChats();
   const now = new Date().toISOString();
@@ -94,7 +98,7 @@ export async function getChat(chatId: string): Promise<DB.Chat | null> {
  */
 export async function appendToChatMessages(
   chatId: string,
-  messages: UIMessage[]
+  messages: MyMessage[]
 ): Promise<DB.Chat | null> {
   const chats = await loadChats();
   const chatIndex = chats.findIndex((chat) => chat.id === chatId);
