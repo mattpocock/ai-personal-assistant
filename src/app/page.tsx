@@ -88,7 +88,7 @@ const ChatBotDemo = async (props: {
         </SidebarContent>
       </Sidebar>
       <div className="h-screen flex flex-col w-full">
-        <TopBar />
+        <TopBar showSidebar />
         <Chat chat={chat} />
       </div>
     </>
