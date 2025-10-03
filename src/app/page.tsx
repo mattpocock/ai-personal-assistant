@@ -15,6 +15,7 @@ import { BrainIcon, MessageSquareIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { Chat } from "./chat";
 import { MemoryList } from "./memory-list";
+import { AddMemoryButton } from "./add-memory-button";
 
 const CHAT_LIMIT = 10;
 
@@ -51,8 +52,8 @@ const ChatBotDemo = async (props: {
             </SidebarGroupAction>
             <SidebarGroupContent className="max-h-[300px] overflow-y-auto">
               {chats.length === 0 ? (
-                <div className="px-2 py-4 text-xs text-sidebar-foreground/50 text-center">
-                  No chats yet. Start a new conversation!
+                <div className="px-2 mt-1 text-xs text-sidebar-foreground/50 text-center">
+                  No chats yet! Start by sending a message.
                 </div>
               ) : (
                 <SidebarMenu>
@@ -78,10 +79,7 @@ const ChatBotDemo = async (props: {
               Memories
             </SidebarGroupLabel>
             <SidebarGroupAction asChild>
-              <button type="button">
-                <PlusIcon />
-                <span className="sr-only">Add Memory</span>
-              </button>
+              <AddMemoryButton />
             </SidebarGroupAction>
             <SidebarGroupContent>
               <MemoryList memories={memories} />

@@ -193,6 +193,7 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
             onChange={(e) => setInput(e.target.value)}
             value={input}
             ref={ref}
+            autoFocus
           />
         </PromptInputBody>
         <PromptInputToolbar>
