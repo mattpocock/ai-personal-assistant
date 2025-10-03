@@ -104,6 +104,7 @@ export async function POST(req: Request) {
 
       await generateTitlePromise;
     },
+    generateId: () => crypto.randomUUID(),
     onFinish: async ({ responseMessage }) => {
       await appendToChatMessages(chatId, [responseMessage]);
     },

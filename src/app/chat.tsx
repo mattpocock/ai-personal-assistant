@@ -63,6 +63,7 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
         router.refresh();
       }
     },
+    generateId: () => crypto.randomUUID(),
   });
 
   const ref = useFocusWhenNoChatIdPresent(chatIdFromSearchParams);
