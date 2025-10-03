@@ -50,6 +50,7 @@ const ChatBotDemo = async (props: {
                     <SidebarMenuButton
                       asChild
                       isActive={chatIdFromSearchParams === chat.id}
+                      className="truncate"
                     >
                       <Link href={`/?chatId=${chat.id}`}>{chat.title}</Link>
                     </SidebarMenuButton>

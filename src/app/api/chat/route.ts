@@ -57,25 +57,39 @@ export async function POST(req: Request) {
     });
   }
 
-  let generateTitlePromise: Promise<DB.Chat | null> | undefined = undefined;
-
-  if (!chat) {
-    const newChat = await createChat({
-      id: chatId,
-      title: "Generating title...",
-      initialMessages: messages,
-    });
-    chat = newChat;
-
-    generateTitlePromise = generateTitle(messages).then((title) => {
-      return updateChatTitle(chatId, title);
-    });
-  } else {
-    await appendToChatMessages(chatId, [mostRecentMessage]);
-  }
-
   const stream = createUIMessageStream<MyMessage>({
     execute: async ({ writer }) => {
+      let generateTitlePromise: Promise<void> | undefined = undefined;
+
+      if (!chat) {
+        const newChat = await createChat({
+          id: chatId,
+          title: "Generating title...",
+          initialMessages: messages,
+        });
+        chat = newChat;
+
+        writer.write({
+          type: "data-frontend-action",
+          data: "refresh-sidebar",
+          transient: true,
+        });
+
+        generateTitlePromise = generateTitle(messages)
+          .then((title) => {
+            return updateChatTitle(chatId, title);
+          })
+          .then(() => {
+            writer.write({
+              type: "data-frontend-action",
+              data: "refresh-sidebar",
+              transient: true,
+            });
+          });
+      } else {
+        await appendToChatMessages(chatId, [mostRecentMessage]);
+      }
+
       const result = streamText({
         model: anthropic("claude-3-5-haiku-latest"),
         messages: convertToModelMessages(messages),
@@ -88,16 +102,7 @@ export async function POST(req: Request) {
         })
       );
 
-      // If we've generated a new chat, alert the frontend
-      // that it should update the sidebar
-      if (generateTitlePromise) {
-        await generateTitlePromise;
-        writer.write({
-          type: "data-frontend-action",
-          data: "refresh-sidebar",
-          transient: true,
-        });
-      }
+      await generateTitlePromise;
     },
     onFinish: async ({ responseMessage }) => {
       await appendToChatMessages(chatId, [responseMessage]);
