@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Personal Assistant
+
+This is a starter repository for building an AI-powered personal assistant using Next.js and the Vercel AI SDK. It serves as the foundation for a course on building sophisticated AI applications with modern web technologies.
+
+## What is this?
+
+This project demonstrates how to build a conversational AI interface with advanced features like:
+
+- **Streaming AI responses** with real-time message updates
+- **Extended thinking** with model reasoning capabilities
+- **Source citations** and references in responses
+- **Rich markdown rendering** with syntax highlighting
+- **Modern UI** built with Radix UI and Tailwind CSS
+- **Model flexibility** - swap AI providers without changing your UI code
+
+The codebase is structured to be educational, showcasing best practices for integrating AI into web applications while maintaining clean, maintainable code.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js (v20 or higher)
+- pnpm package manager
+- API key from your chosen AI provider (Anthropic, OpenAI, etc.)
+
+### Installation
+
+1. Clone the repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd ai-personal-assistant
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Set up your environment variables:
+
+```bash
+# Create a .env.local file with your API key
+# For Anthropic (default):
+ANTHROPIC_API_KEY=your_api_key_here
+
+# Or for OpenAI:
+# OPENAI_API_KEY=your_api_key_here
+```
+
+4. Run the development server:
+
+```bash
+pnpm run dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to start chatting with your AI assistant.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router with Turbopack)
+- **AI SDK**: Vercel AI SDK (provider-agnostic)
+- **Default Model**: Claude Sonnet 4.5 (easily swappable)
+- **UI**: Radix UI components + Tailwind CSS 4
+- **Markdown**: Streamdown for rendering
+- **TypeScript**: Full type safety throughout
+
+## Project Structure
+
+- `src/app/api/chat/route.ts` - Chat API endpoint with streaming
+- `src/app/page.tsx` - Main chat interface
+- `src/components/ai-elements/` - Reusable AI chat components
+- `src/components/ui/` - Generic UI components
+
+## Available Scripts
+
+- `pnpm run dev` - Start development server with Turbopack
+- `pnpm run build` - Build for production
+- `pnpm start` - Start production server
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+This repository is designed to teach modern AI application development patterns. As you explore the code, you'll learn about:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Streaming AI responses to the UI
+- Managing conversation state
+- Rendering complex AI outputs (reasoning, sources, markdown)
+- Building composable AI UI components
+- Working with the Vercel AI SDK's provider-agnostic approach
