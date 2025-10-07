@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import {
   Dialog,
@@ -57,7 +57,7 @@ export function MemoryList({ memories }: { memories: Memory[] }) {
 
   if (memories.length === 0) {
     return (
-      <div className="px-2 mt-1 text-xs text-sidebar-foreground/50 text-center">
+      <div className="px-2 mt-1 text-xs text-sidebar-foreground/50">
         No memories yet. Add one to get started!
       </div>
     );
@@ -65,7 +65,7 @@ export function MemoryList({ memories }: { memories: Memory[] }) {
 
   return (
     <>
-      <SidebarMenu>
+      <SidebarMenuSub>
         {memories.map((memory) => (
           <SidebarMenuItem key={memory.id}>
             <SidebarMenuButton
@@ -76,7 +76,7 @@ export function MemoryList({ memories }: { memories: Memory[] }) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
-      </SidebarMenu>
+      </SidebarMenuSub>
 
       <Dialog
         open={!!selectedMemory}
