@@ -1,29 +1,16 @@
 import { TopBar } from "@/components/top-bar";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { DB, getChat, loadChats, loadMemories } from "@/lib/persistence-layer";
-import { BrainIcon, MessageSquareIcon, PlusIcon } from "lucide-react";
-import Link from "next/link";
-import { Chat } from "./chat";
-import { MemoryList } from "./memory-list";
-import { AddMemoryButton } from "./add-memory-button";
 
-const CHAT_LIMIT = 10;
+import { DB, getChat, loadChats, loadMemories } from "@/lib/persistence-layer";
+import { Chat } from "./chat";
+import { SideBar } from "@/components/side-bar";
+
+export const CHAT_LIMIT = 10;
 
 const ChatBotDemo = async (props: {
   searchParams: Promise<{ chatId?: string }>;
 }) => {
   const searchParams = await props.searchParams;
-  const chatIdFromSearchParams = searchParams.chatId;
+  const chatIdFromSearchParams = searchParams.chatId ?? "";
 
   let chat: DB.Chat | null = null;
   if (chatIdFromSearchParams) {
@@ -37,58 +24,13 @@ const ChatBotDemo = async (props: {
 
   return (
     <>
-      <Sidebar>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              <MessageSquareIcon className="mr-2" />
-              Chats
-            </SidebarGroupLabel>
-            <SidebarGroupAction asChild>
-              <Link href="/">
-                <PlusIcon />
-                <span className="sr-only">New Chat</span>
-              </Link>
-            </SidebarGroupAction>
-            <SidebarGroupContent className="max-h-[300px] overflow-y-auto">
-              {chats.length === 0 ? (
-                <div className="px-2 mt-1 text-xs text-sidebar-foreground/50 text-center">
-                  No chats yet! Start by sending a message.
-                </div>
-              ) : (
-                <SidebarMenu>
-                  {chats.map((chat) => (
-                    <SidebarMenuItem key={chat.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={chatIdFromSearchParams === chat.id}
-                        className="truncate"
-                      >
-                        <Link href={`/?chatId=${chat.id}`}>{chat.title}</Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              )}
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              <BrainIcon className="mr-2" />
-              Memories
-            </SidebarGroupLabel>
-            <SidebarGroupAction asChild>
-              <AddMemoryButton />
-            </SidebarGroupAction>
-            <SidebarGroupContent>
-              <MemoryList memories={memories} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
+      <SideBar
+        chats={chats}
+        memories={memories}
+        chatIdFromSearchParams={chatIdFromSearchParams}
+      />
       <div className="h-screen flex flex-col w-full">
-        <TopBar showSidebar />
+        <TopBar showSidebar title={chat?.title ?? "New Chat"} />
         <Chat chat={chat} />
       </div>
     </>

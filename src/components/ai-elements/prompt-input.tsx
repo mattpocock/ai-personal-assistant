@@ -460,7 +460,7 @@ export const PromptInput = ({
       />
       <form
         className={cn(
-          "w-full divide-y overflow-hidden rounded-xl border bg-background shadow-sm",
+          "w-full divide-y relative rounded-xl max-w-4xl border bg-card shadow-md",
           className
         )}
         onSubmit={handleSubmit}
@@ -537,23 +537,41 @@ export const PromptInputTextarea = ({
   };
 
   return (
-    <Textarea
-      className={cn(
-        "w-full resize-none rounded-none border-none p-3 shadow-none outline-none ring-0",
-        "field-sizing-content bg-transparent dark:bg-transparent",
-        "max-h-48 min-h-16",
-        "focus-visible:ring-0",
-        className
-      )}
-      name="message"
-      onChange={(e) => {
-        onChange?.(e);
-      }}
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      placeholder={placeholder}
-      {...props}
-    />
+    <div className="relative overflow-hidden rounded-xl">
+      <video
+        loop
+        muted
+        autoPlay
+        className="size-15 pointer-events-none absolute mix-blend-lighten -left-1 -top-1 dark:block hidden"
+      >
+        <source src="/orb-prompt.mov" type="video/mp4" />
+      </video>
+      <video
+        loop
+        muted
+        autoPlay
+        className="size-15 pointer-events-none brightness-[1.1] absolute -left-1 -top-1 dark:hidden block"
+      >
+        <source src="/orb-prompt-light.mov" type="video/mp4" />
+      </video>
+      <Textarea
+        className={cn(
+          "w-full relative z-10 resize-none rounded-none border-none p-4 pl-13 shadow-none outline-none ring-0",
+          "field-sizing-content bg-transparent dark:bg-transparent",
+          "max-h-48 min-h-16",
+          "focus-visible:ring-0",
+          className
+        )}
+        name="message"
+        onChange={(e) => {
+          onChange?.(e);
+        }}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        placeholder={placeholder}
+        {...props}
+      />
+    </div>
   );
 };
 
@@ -594,7 +612,7 @@ export const PromptInputButton = ({
   ...props
 }: PromptInputButtonProps) => {
   const newSize =
-    (size ?? Children.count(props.children) > 1) ? "default" : "icon";
+    size ?? Children.count(props.children) > 1 ? "default" : "icon";
 
   return (
     <Button

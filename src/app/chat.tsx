@@ -98,9 +98,9 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
     });
   };
   return (
-    <div className="max-w-4xl mx-auto p-6 relative flex-1 flex flex-col min-h-0 w-full">
-      <Conversation className="">
-        <ConversationContent>
+    <div className="relative flex-1 items-center flex flex-col min-h-0 w-full">
+      <Conversation className="w-full">
+        <ConversationContent className="max-w-4xl mx-auto w-full pb-40">
           {messages.map((message) => (
             <div key={message.id}>
               {message.role === "assistant" &&
@@ -183,31 +183,37 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
-
-      <PromptInput onSubmit={handleSubmit} className="mt-4" globalDrop multiple>
-        <PromptInputBody>
-          <PromptInputAttachments>
-            {(attachment) => <PromptInputAttachment data={attachment} />}
-          </PromptInputAttachments>
-          <PromptInputTextarea
-            onChange={(e) => setInput(e.target.value)}
-            value={input}
-            ref={ref}
-            autoFocus
-          />
-        </PromptInputBody>
-        <PromptInputToolbar>
-          <PromptInputTools>
-            <PromptInputActionMenu>
-              <PromptInputActionMenuTrigger />
-              <PromptInputActionMenuContent>
-                <PromptInputActionAddAttachments />
-              </PromptInputActionMenuContent>
-            </PromptInputActionMenu>
-          </PromptInputTools>
-          <PromptInputSubmit disabled={!input && !status} status={status} />
-        </PromptInputToolbar>
-      </PromptInput>
+      <div className="absolute bottom-0 flex items-center justify-center w-full sm:px-6 px-5">
+        <PromptInput
+          onSubmit={handleSubmit}
+          className="mb-4"
+          globalDrop
+          multiple
+        >
+          <PromptInputBody>
+            <PromptInputAttachments>
+              {(attachment) => <PromptInputAttachment data={attachment} />}
+            </PromptInputAttachments>
+            <PromptInputTextarea
+              onChange={(e) => setInput(e.target.value)}
+              value={input}
+              ref={ref}
+              autoFocus
+            />
+          </PromptInputBody>
+          <PromptInputToolbar>
+            <PromptInputTools>
+              <PromptInputActionMenu>
+                <PromptInputActionMenuTrigger />
+                <PromptInputActionMenuContent>
+                  <PromptInputActionAddAttachments />
+                </PromptInputActionMenuContent>
+              </PromptInputActionMenu>
+            </PromptInputTools>
+            <PromptInputSubmit disabled={!input && !status} status={status} />
+          </PromptInputToolbar>
+        </PromptInput>
+      </div>
     </div>
   );
 };
