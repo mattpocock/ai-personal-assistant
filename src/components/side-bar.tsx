@@ -54,10 +54,16 @@ export function SideBar({
               autoPlay
               className="size-15 brightness-[0.95] dark:block hidden"
             >
-              <source src="/orb-sidebar.mov" type="video/mp4" />
+              <source
+                src="https://res.cloudinary.com/total-typescript/video/upload/v1759841358/orb-sidebar.mov"
+                type="video/mp4"
+              />
             </video>
             <video loop muted autoPlay className="size-15 dark:hidden block">
-              <source src="/orb-sidebar-light.mov" type="video/mp4" />
+              <source
+                src="https://res.cloudinary.com/total-typescript/video/upload/v1759841358/orb-sidebar-light.mov"
+                type="video/mp4"
+              />
             </video>
             <span className="text-sm font-semibold">Personal Assistant</span>
           </Link>

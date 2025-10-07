@@ -544,7 +544,10 @@ export const PromptInputTextarea = ({
         autoPlay
         className="size-15 pointer-events-none absolute mix-blend-lighten -left-1 -top-1 dark:block hidden"
       >
-        <source src="/orb-prompt.mov" type="video/mp4" />
+        <source
+          src="https://res.cloudinary.com/total-typescript/video/upload/v1759841359/orb-prompt.mov"
+          type="video/mp4"
+        />
       </video>
       <video
         loop
@@ -552,7 +555,10 @@ export const PromptInputTextarea = ({
         autoPlay
         className="size-15 pointer-events-none brightness-[1.1] absolute -left-1 -top-1 dark:hidden block"
       >
-        <source src="/orb-prompt-light.mov" type="video/mp4" />
+        <source
+          src="https://res.cloudinary.com/total-typescript/video/upload/v1759841359/orb-prompt-light.mov"
+          type="video/mp4"
+        />
       </video>
       <Textarea
         className={cn(
