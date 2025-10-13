@@ -220,6 +220,31 @@ export async function createMemory(opts: {
 }
 
 /**
+ * Update an existing memory
+ */
+export async function updateMemory(
+  memoryId: string,
+  opts: {
+    title: string;
+    content: string;
+  }
+): Promise<DB.Memory | null> {
+  const memories = await loadMemories();
+  const memoryIndex = memories.findIndex((m) => m.id === memoryId);
+
+  if (memoryIndex === -1) {
+    return null;
+  }
+
+  memories[memoryIndex]!.title = opts.title;
+  memories[memoryIndex]!.content = opts.content;
+  memories[memoryIndex]!.updatedAt = new Date().toISOString();
+
+  await saveMemories(memories);
+  return memories[memoryIndex]!;
+}
+
+/**
  * Delete a memory
  */
 export async function deleteMemory(memoryId: string): Promise<boolean> {
