@@ -6,7 +6,11 @@ import { EmailList } from "./email-list";
 import { PerPageSelector } from "./per-page-selector";
 import { SearchInput } from "./search-input";
 import { SearchPagination } from "./search-pagination";
-import { loadEmails, searchWithBM25 } from "../search";
+import {
+  loadEmails,
+  loadOrGenerateEmbeddings,
+  searchWithBM25,
+} from "../search";
 
 export default async function SearchPage(props: {
   searchParams: Promise<{ q?: string; page?: string; perPage?: string }>;
@@ -17,6 +21,10 @@ export default async function SearchPage(props: {
   const perPage = Number(searchParams.perPage) || 10;
 
   const allEmails = await loadEmails();
+
+  const embeddings = await loadOrGenerateEmbeddings(allEmails);
+
+  console.log("Email embeddings loaded:", embeddings.length);
 
   const emailsWithScores = await searchWithBM25(
     query.toLowerCase().split(" "),
