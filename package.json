@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.23",
+    "@ai-sdk/google": "^2.0.23",
     "@ai-sdk/react": "^2.0.59",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
