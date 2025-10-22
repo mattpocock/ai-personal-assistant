@@ -125,3 +125,43 @@ export async function searchWithEmbeddings(query: string, emails: Email[]) {
   // Sort by similarity descending
   return results.sort((a, b) => b.score - a.score);
 }
+
+const RRF_K = 60;
+
+export function reciprocalRankFusion(
+  rankings: { email: Email; score: number }[][]
+): { email: Email; score: number }[] {
+  const rrfScores = new Map<string, number>();
+  const emailMap = new Map<string, Email>();
+
+  // Process each ranking list (BM25 and embeddings)
+  rankings.forEach((ranking) => {
+    ranking.forEach((item, rank) => {
+      const currentScore = rrfScores.get(item.email.id) || 0;
+
+      // Position-based scoring: 1/(k+rank)
+      const contribution = 1 / (RRF_K + rank);
+      rrfScores.set(item.email.id, currentScore + contribution);
+
+      emailMap.set(item.email.id, item.email);
+    });
+  });
+
+  // Sort by combined RRF score descending
+  return Array.from(rrfScores.entries())
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .map(([emailId, score]) => ({
+      score,
+      email: emailMap.get(emailId)!,
+    }));
+}
+
+export const searchWithRRF = async (query: string, emails: Email[]) => {
+  const bm25Ranking = await searchWithBM25(
+    query.toLowerCase().split(" "),
+    emails
+  );
+  const embeddingsRanking = await searchWithEmbeddings(query, emails);
+  const rrfRanking = reciprocalRankFusion([bm25Ranking, embeddingsRanking]);
+  return rrfRanking;
+};
