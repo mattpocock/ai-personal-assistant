@@ -2,7 +2,7 @@ import { SideBar } from "@/components/side-bar";
 import { TopBar } from "@/components/top-bar";
 import { loadChats, loadMemories } from "@/lib/persistence-layer";
 import { CHAT_LIMIT } from "../page";
-import { loadEmails, searchWithEmbeddings } from "../search";
+import { loadEmails, searchWithEmbeddings, searchWithRRF } from "../search";
 import { EmailList } from "./email-list";
 import { PerPageSelector } from "./per-page-selector";
 import { SearchInput } from "./search-input";
@@ -18,7 +18,7 @@ export default async function SearchPage(props: {
 
   const allEmails = await loadEmails();
 
-  const emailsWithScores = await searchWithEmbeddings(query, allEmails);
+  const emailsWithScores = await searchWithRRF(query, allEmails);
 
   // Transform emails to match the expected format
   const transformedEmails = emailsWithScores
