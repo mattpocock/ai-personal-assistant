@@ -77,6 +77,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      okapibm25:
+        specifier: ^1.4.1
+        version: 1.4.1
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -2583,6 +2586,9 @@ packages:
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
+
+  okapibm25@1.4.1:
+    resolution: {integrity: sha512-UHmeH4MAtZXGFVncwbY7pfFvDVNxpsyM3W66aGPU0SHj1+ld59ty+9lJ0ifcrcnPUl1XdYoDgb06ObyCnpTs3g==}
 
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
@@ -5966,6 +5972,8 @@ snapshots:
     optional: true
 
   obug@2.1.1: {}
+
+  okapibm25@1.4.1: {}
 
   on-exit-leak-free@2.1.2: {}
 
