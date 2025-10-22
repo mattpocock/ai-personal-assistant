@@ -5,7 +5,7 @@ import {
   getChat,
   updateChatTitle,
 } from "@/lib/persistence-layer";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       }
 
       const result = streamText({
-        model: anthropic("claude-3-5-haiku-latest"),
+        model: google("gemini-2.5-flash-lite"),
         messages: convertToModelMessages(messages),
       });
 
