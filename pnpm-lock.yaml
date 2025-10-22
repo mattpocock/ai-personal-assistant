@@ -77,6 +77,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      okapibm25:
+        specifier: ^1.4.1
+        version: 1.4.1
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -2567,6 +2570,9 @@ packages:
   node-abi@3.85.0:
     resolution: {integrity: sha512-zsFhmbkAzwhTft6nd3VxcG0cvJsT70rL+BIGHWVq5fi6MwGrHwzqKaxXE+Hl2GmnGItnDKPPkO5/LQqjVkIdFg==}
     engines: {node: '>=10'}
+
+  okapibm25@1.4.1:
+    resolution: {integrity: sha512-UHmeH4MAtZXGFVncwbY7pfFvDVNxpsyM3W66aGPU0SHj1+ld59ty+9lJ0ifcrcnPUl1XdYoDgb06ObyCnpTs3g==}
 
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
@@ -5938,6 +5944,8 @@ snapshots:
     dependencies:
       semver: 7.7.3
     optional: true
+
+  okapibm25@1.4.1: {}
 
   on-exit-leak-free@2.1.2: {}
 
