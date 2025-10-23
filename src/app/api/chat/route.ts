@@ -93,10 +93,24 @@ export async function POST(req: Request) {
       }
 
       const result = streamText({
-        model: google("gemini-2.5-flash"),
+        model: google("gemini-2.5-flash-lite"),
         messages: convertToModelMessages(messages),
         system: `
-          Use your search tool to answer questions.
+<task-context>
+You are an email assistant that helps users find and understand information from their emails.
+</task-context>
+
+<rules>
+- You MUST use the search tool for ANY question about emails, people, amounts, dates, or specific information
+- NEVER answer from your training data - always search the actual emails first
+- If the first search doesn't find enough information, try different keywords or search queries
+- Use both semantic (searchQuery) and keyword (keywords) search parameters together for best results
+- Only after searching should you formulate your answer based on the search results
+</rules>
+
+<the-ask>
+Here is the user's question. Search their emails first, then provide your answer based on what you find.
+</the-ask>
         `,
         tools: {
           search: searchTool,
