@@ -120,8 +120,6 @@ export async function searchWithEmbeddings(query: string, emails: Email[]) {
     return { score, email };
   });
 
-  console.log("Results:", results.length);
-
   // Sort by similarity descending
   return results.sort((a, b) => b.score - a.score);
 }
