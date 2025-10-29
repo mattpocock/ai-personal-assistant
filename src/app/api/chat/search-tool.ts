@@ -5,8 +5,11 @@ import {
   searchWithBM25,
   searchWithEmbeddings,
 } from "@/app/search";
+import { rerankEmails } from "@/app/rerank";
 import { tool } from "ai";
 import { z } from "zod";
+
+const NUMBER_PASSED_TO_RERANKER = 30;
 
 export const searchTool = tool({
   description:
@@ -38,20 +41,27 @@ export const searchTool = tool({
       ? await searchWithEmbeddings(searchQuery, emailChunks)
       : [];
     const rrfResults = reciprocalRankFusion([
-      bm25Results.slice(0, 30), // Only take the top 30 results from each search
-      embeddingResults.slice(0, 30), // Only take the top 30 results from each search
+      // Only take the top NUMBER_PASSED_TO_RERANKER results from each search
+      bm25Results.slice(0, NUMBER_PASSED_TO_RERANKER),
+      embeddingResults.slice(0, NUMBER_PASSED_TO_RERANKER),
     ]);
 
-    // Return top 10 full email objects
-    const topEmails = rrfResults
-      .slice(0, 10)
-      .filter((r) => r.score > 0) // Only return emails with a score greater than 0
-      .map((r) => ({
-        id: r.email.id,
-        subject: r.email.subject,
-        body: r.email.chunk,
-        score: r.score,
-      }));
+    // Rerank results using LLM
+    const query = [keywords?.join(" "), searchQuery].filter(Boolean).join(" ");
+    const rerankedResults = await rerankEmails(
+      rrfResults.slice(0, NUMBER_PASSED_TO_RERANKER),
+      query
+    );
+
+    // Return full email objects
+    const topEmails = rerankedResults.map((r) => ({
+      id: r.email.id,
+      subject: r.email.subject,
+      body: r.email.chunk,
+      score: r.score,
+    }));
+
+    console.log("Top emails:", topEmails.length);
 
     return {
       emails: topEmails,
