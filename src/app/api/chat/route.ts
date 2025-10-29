@@ -113,7 +113,7 @@ Here is the user's question. Search their emails first, then provide your answer
 </the-ask>
         `,
         tools: {
-          search: searchTool,
+          search: searchTool(messages),
         },
         stopWhen: [stepCountIs(10)],
       });
