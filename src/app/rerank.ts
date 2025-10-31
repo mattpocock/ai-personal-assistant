@@ -1,13 +1,10 @@
 import { google } from "@ai-sdk/google";
 import { generateObject, ModelMessage } from "ai";
 import { z } from "zod";
+import { EmailChunk } from "./search";
 
 type ResultWithEmail = {
-  email: {
-    id: string;
-    subject: string;
-    chunk: string;
-  };
+  email: EmailChunk;
   score: number;
 };
 

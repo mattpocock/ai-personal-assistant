@@ -35,6 +35,11 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+} from "@/components/ai-elements/tool";
 import { DB } from "@/lib/persistence-layer";
 import { useChat } from "@ai-sdk/react";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
@@ -43,6 +48,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Fragment, startTransition, useState } from "react";
 import type { MyMessage } from "./api/chat/route";
 import { useFocusWhenNoChatIdPresent } from "./use-focus-chat-when-new-chat-button-pressed";
+import { Button } from "@/components/ui/button";
 
 export const Chat = (props: { chat: DB.Chat | null }) => {
   const [backupChatId, setBackupChatId] = useState(crypto.randomUUID());
@@ -173,6 +179,70 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
                         <ReasoningContent>{part.text}</ReasoningContent>
                       </Reasoning>
                     );
+                  case "tool-search":
+                    return (
+                      <Tool
+                        key={`${message.id}-${i}`}
+                        className="w-full"
+                        defaultOpen={false}
+                      >
+                        <ToolHeader
+                          title="Search"
+                          type={part.type}
+                          state={part.state}
+                        />
+                        <ToolContent>
+                          <div className="space-y-4 p-4">
+                            {/* Input parameters */}
+                            {part.input && (
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                                  Parameters
+                                </h4>
+                                <div className="text-sm">
+                                  {part.input.keywords && (
+                                    <div>
+                                      <span className="font-medium">
+                                        Keywords:
+                                      </span>{" "}
+                                      {part.input.keywords.join(", ")}
+                                    </div>
+                                  )}
+                                  {part.input.searchQuery && (
+                                    <div>
+                                      <span className="font-medium">
+                                        Search Query:
+                                      </span>{" "}
+                                      {part.input.searchQuery}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Email results */}
+                            {part.state === "output-available" &&
+                              part.output && (
+                                <EmailResultsGrid
+                                  emails={part.output.emails}
+                                />
+                              )}
+
+                            {/* Error state */}
+                            {part.state === "output-error" && (
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                                  Error
+                                </h4>
+                                <div className="rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+                                  {part.errorText}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </ToolContent>
+                      </Tool>
+                    );
                   default:
                     return null;
                 }
@@ -214,6 +284,58 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
           </PromptInputToolbar>
         </PromptInput>
       </div>
+    </div>
+  );
+};
+
+const EmailResultsGrid = ({
+  emails,
+}: {
+  emails: Array<{
+    id: string;
+    subject: string;
+    from: string;
+    to: string | string[];
+    body: string;
+    score: number;
+  }>;
+}) => {
+  const [showAll, setShowAll] = useState(false);
+  const displayedEmails = showAll ? emails : emails.slice(0, 8);
+  const hasMore = emails.length > 8;
+
+  return (
+    <div className="space-y-2">
+      <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+        Results ({emails.length} {emails.length === 1 ? "email" : "emails"})
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {displayedEmails.map((email, idx) => (
+          <div
+            key={idx}
+            className="rounded-md border bg-muted/30 p-3 text-sm space-y-1"
+          >
+            <div className="font-medium">{email.subject}</div>
+            <div className="text-muted-foreground text-xs">
+              <span className="font-medium">From:</span> {email.from}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              <span className="font-medium">To:</span>{" "}
+              {Array.isArray(email.to) ? email.to.join(", ") : email.to}
+            </div>
+          </div>
+        ))}
+      </div>
+      {hasMore && !showAll && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAll(true)}
+          className="w-full"
+        >
+          Show more ({emails.length - 8} more)
+        </Button>
+      )}
     </div>
   );
 };
