@@ -6,8 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "cherry-pick": "ai-hero-cli cherry-pick --branch=origin/live-run-through",
-    "reset": "ai-hero-cli reset --branch=origin/live-run-through"
+    "cherry-pick": "ai-hero-cli cherry-pick --branch=live-run-through",
+    "reset": "ai-hero-cli reset --branch=live-run-through"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.39",
