@@ -361,6 +361,12 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
                                       {part.input.ids.length !== 1 ? "s" : ""}
                                     </div>
                                   )}
+                                  <div>
+                                    <span className="font-medium">
+                                      Include Thread:
+                                    </span>{" "}
+                                    {part.input.includeThread ? "Yes" : "No"}
+                                  </div>
                                 </div>
                               </div>
                             )}
