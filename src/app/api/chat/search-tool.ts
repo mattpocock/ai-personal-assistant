@@ -69,6 +69,8 @@ export const searchTool = (messages: UIMessage[]) =>
         id: r.email.id,
         subject: r.email.subject,
         body: r.email.chunk,
+        from: r.email.from,
+        to: r.email.to,
         score: r.score,
       }));
 
