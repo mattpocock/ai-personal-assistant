@@ -18,6 +18,7 @@ import {
 } from "ai";
 import { generateTitleForChat } from "./generate-title";
 import { searchTool } from "./search-tool";
+import { filterEmailsTool } from "./filter-tool";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -32,6 +33,7 @@ export type MyMessage = UIMessage<
 
 const getTools = (messages: UIMessage[]) => ({
   search: searchTool(messages),
+  filterEmails: filterEmailsTool,
 });
 
 export async function POST(req: Request) {
@@ -99,7 +101,7 @@ export async function POST(req: Request) {
       }
 
       const result = streamText({
-        model: google("gemini-2.5-flash-lite"),
+        model: google("gemini-2.5-flash"),
         messages: convertToModelMessages(messages),
         system: `
 <task-context>
@@ -107,15 +109,29 @@ You are an email assistant that helps users find and understand information from
 </task-context>
 
 <rules>
-- You MUST use the search tool for ANY question about emails, people, amounts, dates, or specific information
-- NEVER answer from your training data - always search the actual emails first
-- If the first search doesn't find enough information, try different keywords or search queries
-- Use both semantic (searchQuery) and keyword (keywords) search parameters together for best results
-- Only after searching should you formulate your answer based on the search results
+- You have TWO tools available: 'search' and 'filterEmails'
+- Choose the appropriate tool based on the query type:
+
+  USE 'filterEmails' when the user wants to:
+  - Find emails from/to specific people (e.g., "emails from John", "emails to sarah@example.com")
+  - Filter by date ranges (e.g., "emails before January 2024", "emails after last week")
+  - Find emails containing exact text (e.g., "emails containing 'invoice'")
+  - Any combination of precise filtering criteria
+
+  USE 'search' when the user wants to:
+  - Find information semantically (e.g., "emails about the project deadline")
+  - Search by concepts or topics (e.g., "discussions about budget")
+  - Find answers to questions (e.g., "what did John say about the meeting?")
+  - Any query requiring understanding of meaning/context
+  - Find people by name or description (e.g., "Mike's biggest client")
+
+- NEVER answer from your training data - always use tools first
+- If the first query doesn't find enough information, try different approaches or tools
+- Only after using tools should you formulate your answer based on the results
 </rules>
 
 <the-ask>
-Here is the user's question. Search their emails first, then provide your answer based on what you find.
+Here is the user's question. Use the appropriate tool(s) first, then provide your answer based on what you find.
 </the-ask>
         `,
         tools: getTools(messages),
