@@ -10,6 +10,7 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  InferUITools,
   safeValidateUIMessages,
   stepCountIs,
   streamText,
@@ -25,8 +26,13 @@ export type MyMessage = UIMessage<
   never,
   {
     "frontend-action": "refresh-sidebar";
-  }
+  },
+  InferUITools<ReturnType<typeof getTools>>
 >;
+
+const getTools = (messages: UIMessage[]) => ({
+  search: searchTool(messages),
+});
 
 export async function POST(req: Request) {
   const body: {
@@ -112,9 +118,7 @@ You are an email assistant that helps users find and understand information from
 Here is the user's question. Search their emails first, then provide your answer based on what you find.
 </the-ask>
         `,
-        tools: {
-          search: searchTool(messages),
-        },
+        tools: getTools(messages),
         stopWhen: [stepCountIs(10)],
       });
 
