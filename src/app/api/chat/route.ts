@@ -19,6 +19,7 @@ import {
 import { generateTitleForChat } from "./generate-title";
 import { searchTool } from "./search-tool";
 import { filterEmailsTool } from "./filter-tool";
+import { getEmailsTool } from "./get-emails-tool";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -34,6 +35,7 @@ export type MyMessage = UIMessage<
 const getTools = (messages: UIMessage[]) => ({
   search: searchTool(messages),
   filterEmails: filterEmailsTool,
+  getEmails: getEmailsTool,
 });
 
 export async function POST(req: Request) {
@@ -109,9 +111,10 @@ You are an email assistant that helps users find and understand information from
 </task-context>
 
 <rules>
-- You have TWO tools available: 'search' and 'filterEmails'
-- Choose the appropriate tool based on the query type:
+- You have THREE tools available: 'search', 'filterEmails', and 'getEmails'
+- Follow this multi-step workflow for token efficiency:
 
+  STEP 1 - Browse metadata:
   USE 'filterEmails' when the user wants to:
   - Find emails from/to specific people (e.g., "emails from John", "emails to sarah@example.com")
   - Filter by date ranges (e.g., "emails before January 2024", "emails after last week")
@@ -125,13 +128,24 @@ You are an email assistant that helps users find and understand information from
   - Any query requiring understanding of meaning/context
   - Find people by name or description (e.g., "Mike's biggest client")
 
+  NOTE: 'search' and 'filterEmails' return metadata with snippets only (id, threadId, subject, from, to, timestamp, snippet)
+
+  STEP 2 - Review and select:
+  - Review the subjects, metadata, and snippets from search/filter results
+  - Identify which specific emails need full content to answer the user's question
+  - If snippets contain enough info, answer directly without fetching full content
+
+  STEP 3 - Fetch full content:
+  USE 'getEmails' to retrieve full email bodies:
+  - Pass array of email IDs you need to read completely
+
 - NEVER answer from your training data - always use tools first
 - If the first query doesn't find enough information, try different approaches or tools
 - Only after using tools should you formulate your answer based on the results
 </rules>
 
 <the-ask>
-Here is the user's question. Use the appropriate tool(s) first, then provide your answer based on what you find.
+Here is the user's question. Follow the multi-step workflow above to efficiently find and retrieve the information.
 </the-ask>
         `,
         tools: getTools(messages),

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const filterEmailsTool = tool({
   description:
-    "Filter emails by exact criteria like sender, recipient, date range, or text content. Use this for precise filtering (e.g., 'emails from John', 'emails before 2024-01-01', 'emails containing invoice').",
+    "Filter emails by exact criteria like sender, recipient, date range, or text content. Returns metadata with snippets only - use getEmails tool to fetch full content of specific emails.",
   inputSchema: z.object({
     from: z
       .string()
@@ -87,14 +87,19 @@ export const filterEmailsTool = tool({
     );
 
     return {
-      emails: results.map((email) => ({
-        id: email.id,
-        subject: email.subject,
-        body: email.body,
-        from: email.from,
-        to: email.to,
-        timestamp: email.timestamp,
-      })),
+      emails: results.map((email) => {
+        const snippet = email.body.slice(0, 150).trim() + (email.body.length > 150 ? "..." : "");
+
+        return {
+          id: email.id,
+          threadId: email.threadId,
+          subject: email.subject,
+          from: email.from,
+          to: email.to,
+          timestamp: email.timestamp,
+          snippet,
+        };
+      }),
     };
   },
 });
