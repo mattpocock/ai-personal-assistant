@@ -46,14 +46,16 @@ const getTools = (messages: UIMessage[]) => ({
 
 export async function POST(req: Request) {
   const body: {
-    messages: UIMessage[];
+    message: MyMessage;
     id: string;
   } = await req.json();
 
   const chatId = body.id;
 
+  let chat = await getChat(chatId);
+
   const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
-    messages: body.messages,
+    messages: [...(chat?.messages ?? []), body.message],
   });
 
   if (!validatedMessagesResult.success) {
@@ -62,7 +64,6 @@ export async function POST(req: Request) {
 
   const messages = validatedMessagesResult.data;
 
-  let chat = await getChat(chatId);
   const mostRecentMessage = messages[messages.length - 1];
 
   if (!mostRecentMessage) {
