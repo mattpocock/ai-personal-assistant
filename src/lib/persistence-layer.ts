@@ -9,8 +9,28 @@ export namespace DB {
     id: string;
     title: string;
     messages: MyMessage[];
+    llmSummary?: ChatLLMSummary;
     createdAt: string;
     updatedAt: string;
+  }
+
+  export interface ChatLLMSummary {
+    /**
+     * 2-4 keywords that would help identify similar future conversations
+     */
+    tags: string[];
+    /**
+     * One sentence describing what the conversation accomplished
+     */
+    summary: string;
+    /**
+     * Most effective approach or strategy used in this conversation
+     */
+    whatWorkedWell: string;
+    /**
+     * Most important pitfall or ineffective approach to avoid
+     */
+    whatToAvoid: string;
   }
 
   export interface Memory {
@@ -154,6 +174,21 @@ export async function updateChatTitle(
   chats[chatIndex]!.title = title;
   chats[chatIndex]!.updatedAt = new Date().toISOString();
 
+  await saveChats(chats);
+  return chats[chatIndex]!;
+}
+
+export async function updateChatLLMSummary(
+  chatId: string,
+  llmSummary: DB.Chat["llmSummary"]
+): Promise<DB.Chat | null> {
+  const chats = await loadChats();
+  const chatIndex = chats.findIndex((chat) => chat.id === chatId);
+  if (chatIndex === -1) {
+    return null;
+  }
+  chats[chatIndex]!.llmSummary = llmSummary;
+  chats[chatIndex]!.updatedAt = new Date().toISOString();
   await saveChats(chats);
   return chats[chatIndex]!;
 }
