@@ -12,8 +12,8 @@ importers:
         specifier: ^2.0.41
         version: 2.0.41(zod@4.1.12)
       '@ai-sdk/google':
-        specifier: ^2.0.27
-        version: 2.0.27(zod@4.1.12)
+        specifier: ^2.0.28
+        version: 2.0.28(zod@4.1.12)
       '@ai-sdk/react':
         specifier: ^2.0.87
         version: 2.0.87(react@19.1.0)(zod@4.1.12)
@@ -118,8 +118,8 @@ importers:
         specifier: ^15.5.13
         version: 15.5.13
       ai-hero-cli:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.2.5
+        version: 0.2.5
       tailwindcss:
         specifier: ^4
         version: 4.1.14
@@ -144,8 +144,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/google@2.0.27':
-    resolution: {integrity: sha512-PGjtRWrw1MqP0fi7lNdAiPini+pTriS9Pmdbz2pUfHjNzTye1HJynTH1Tq6IQ++UCIX5l3UNh1p9yIpjitR48w==}
+  '@ai-sdk/google@2.0.28':
+    resolution: {integrity: sha512-JMP2zm5JJcnaaF1jEMabzVIG7jfphzkqJOq+SINAyiDwlpc0BuUL92M/OaYBPob2QBOpnpGH6h/MCok0VR1dSA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1129,8 +1129,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai-hero-cli@0.2.4:
-    resolution: {integrity: sha512-HtxSDqfci0MQSdwKM6mqh1WDxvViIjqx44vP5gZbVIteTUbu9W5e0MiNY9jrwbcm6mDq8d5S2UajCtCZWbqIgQ==}
+  ai-hero-cli@0.2.5:
+    resolution: {integrity: sha512-73x8zn7wEWNm4Mhb336GAae9L4l0zddSFoRMkYEClJI0htM5IaaF7D/IdPciuE55+olNu8UMJdchDUNaa6upZQ==}
     hasBin: true
 
   ai@5.0.87:
@@ -2288,7 +2288,7 @@ snapshots:
       '@vercel/oidc': 3.0.3
       zod: 4.1.12
 
-  '@ai-sdk/google@2.0.27(zod@4.1.12)':
+  '@ai-sdk/google@2.0.28(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.16(zod@4.1.12)
@@ -3243,7 +3243,7 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ai-hero-cli@0.2.4: {}
+  ai-hero-cli@0.2.5: {}
 
   ai@5.0.87(zod@4.1.12):
     dependencies:
