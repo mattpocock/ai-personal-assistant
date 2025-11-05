@@ -23,6 +23,9 @@ import { getEmailsTool } from "./get-emails-tool";
 import { memoryToText, searchMemories } from "@/app/memory-search";
 import { extractAndUpdateMemories } from "./extract-memories";
 import { searchMessages } from "@/app/message-search";
+import { searchForRelatedChats } from "@/app/search-for-related-chats";
+import { chatToText } from "@/app/utils";
+import { reflectOnChat } from "@/app/reflect-on-chat";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -136,6 +139,8 @@ export async function POST(req: Request) {
         await appendToChatMessages(chatId, [mostRecentMessage]);
       }
 
+      const relatedChats = await searchForRelatedChats(chatId, messages);
+
       const result = streamText({
         model: google("gemini-2.5-flash"),
         messages: convertToModelMessages(messageHistoryForLLM),
@@ -194,6 +199,14 @@ ${memories
   .join("\n")}
 </memories>
 
+<related-chats>
+Here are some related chats that may be relevant to the conversation:
+
+${relatedChats
+  .map((chat) => ["<chat>", chatToText(chat.item), "</chat>"])
+  .join("\n")}
+</related-chats>
+
 <the-ask>
 Here is the user's request. For general questions and conversations, respond naturally. For email-related queries, use the tools and multi-step workflow above.
 </the-ask>
@@ -218,6 +231,7 @@ Here is the user's request. For general questions and conversations, respond nat
         messages: [...messages, responseMessage],
         memories: memories.map((memory) => memory.item),
       });
+      await reflectOnChat(chatId);
     },
   });
 
