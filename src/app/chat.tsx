@@ -65,6 +65,9 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
         router.refresh();
       }
     },
+    onFinish: () => {
+      router.refresh();
+    },
     generateId: () => crypto.randomUUID(),
   });
 
@@ -510,7 +513,8 @@ const FullEmailDisplay = ({
   return (
     <div className="space-y-2">
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        Full Content ({emails.length} {emails.length === 1 ? "email" : "emails"})
+        Full Content ({emails.length} {emails.length === 1 ? "email" : "emails"}
+        )
       </h4>
       <div className="space-y-4">
         {emails.map((email, idx) => (
