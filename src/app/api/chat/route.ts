@@ -22,6 +22,7 @@ import { filterEmailsTool } from "./filter-tool";
 import { getEmailsTool } from "./get-emails-tool";
 import { memoryToText, searchMemories } from "@/app/memory-search";
 import { extractAndUpdateMemories } from "./extract-memories";
+import { searchMessages } from "@/app/message-search";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -29,6 +30,8 @@ export const maxDuration = 30;
 const USER_FIRST_NAME = "Sarah";
 const USER_LAST_NAME = "Chen";
 const MEMORIES_TO_USE = 3;
+const MESSAGE_HISTORY_LENGTH = 10;
+const OLD_MESSAGES_TO_USE = 10;
 
 export type MyMessage = UIMessage<
   never,
@@ -54,8 +57,14 @@ export async function POST(req: Request) {
 
   let chat = await getChat(chatId);
 
+  const recentMessages = [...(chat?.messages ?? []), body.message].slice(
+    -MESSAGE_HISTORY_LENGTH
+  );
+
+  const olderMessages = chat?.messages.slice(0, -MESSAGE_HISTORY_LENGTH);
+
   const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
-    messages: [...(chat?.messages ?? []), body.message],
+    messages: recentMessages,
   });
 
   if (!validatedMessagesResult.success) {
@@ -79,6 +88,20 @@ export async function POST(req: Request) {
   const allMemories = await searchMemories({ messages });
 
   const memories = allMemories.slice(0, MEMORIES_TO_USE);
+
+  const oldMessagesToUse = await searchMessages({
+    recentMessages: messages,
+    olderMessages: olderMessages ?? [],
+  }).then((results) =>
+    results
+      .slice(0, OLD_MESSAGES_TO_USE)
+      .sort((a, b) => b.score - a.score)
+      .map((result) => result.item)
+  );
+
+  console.log("oldMessagesToUse", oldMessagesToUse.length);
+
+  const messageHistoryForLLM = [...oldMessagesToUse, ...messages];
 
   const stream = createUIMessageStream<MyMessage>({
     execute: async ({ writer }) => {
@@ -115,7 +138,7 @@ export async function POST(req: Request) {
 
       const result = streamText({
         model: google("gemini-2.5-flash"),
-        messages: convertToModelMessages(messages),
+        messages: convertToModelMessages(messageHistoryForLLM),
         system: `
 <task-context>
 You are a personal assistant to ${USER_FIRST_NAME} ${USER_LAST_NAME}. You help with general tasks, questions, and can access ${USER_FIRST_NAME}'s email when needed.
