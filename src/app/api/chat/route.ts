@@ -21,6 +21,7 @@ import { searchTool } from "./search-tool";
 import { filterEmailsTool } from "./filter-tool";
 import { getEmailsTool } from "./get-emails-tool";
 import { memoryToText, searchMemories } from "@/app/memory-search";
+import { extractAndUpdateMemories } from "./extract-memories";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -156,7 +157,13 @@ You are an email assistant that helps users find and understand information from
 <memories>
 Here are some memories that may be relevant to the conversation:
 
-${memories.map((memory) => `- ${memoryToText(memory.item)}`).join("\n")}
+${memories
+  .map((memory) => [
+    `<memory id="${memory.item.id}">`,
+    memoryToText(memory.item),
+    "</memory>",
+  ])
+  .join("\n")}
 </memories>
 
 <the-ask>
@@ -179,6 +186,10 @@ Here is the user's question. Follow the multi-step workflow above to efficiently
     generateId: () => crypto.randomUUID(),
     onFinish: async ({ responseMessage }) => {
       await appendToChatMessages(chatId, [responseMessage]);
+      await extractAndUpdateMemories({
+        messages: [...messages, responseMessage],
+        memories: memories.map((memory) => memory.item),
+      });
     },
   });
 
