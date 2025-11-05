@@ -20,9 +20,12 @@ import { generateTitleForChat } from "./generate-title";
 import { searchTool } from "./search-tool";
 import { filterEmailsTool } from "./filter-tool";
 import { getEmailsTool } from "./get-emails-tool";
+import { memoryToText, searchMemories } from "@/app/memory-search";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+const MEMORIES_TO_USE = 3;
 
 export type MyMessage = UIMessage<
   never,
@@ -68,6 +71,10 @@ export async function POST(req: Request) {
       status: 400,
     });
   }
+
+  const allMemories = await searchMemories({ messages });
+
+  const memories = allMemories.slice(0, MEMORIES_TO_USE);
 
   const stream = createUIMessageStream<MyMessage>({
     execute: async ({ writer }) => {
@@ -145,6 +152,12 @@ You are an email assistant that helps users find and understand information from
 - If the first query doesn't find enough information, try different approaches or tools
 - Only after using tools should you formulate your answer based on the results
 </rules>
+
+<memories>
+Here are some memories that may be relevant to the conversation:
+
+${memories.map((memory) => `- ${memoryToText(memory.item)}`).join("\n")}
+</memories>
 
 <the-ask>
 Here is the user's question. Follow the multi-step workflow above to efficiently find and retrieve the information.
