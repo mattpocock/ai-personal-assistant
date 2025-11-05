@@ -26,6 +26,8 @@ import { extractAndUpdateMemories } from "./extract-memories";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+const USER_FIRST_NAME = "Sarah";
+const USER_LAST_NAME = "Chen";
 const MEMORIES_TO_USE = 3;
 
 export type MyMessage = UIMessage<
@@ -115,12 +117,14 @@ export async function POST(req: Request) {
         messages: convertToModelMessages(messages),
         system: `
 <task-context>
-You are an email assistant that helps users find and understand information from their emails.
+You are a personal assistant to ${USER_FIRST_NAME} ${USER_LAST_NAME}. You help with general tasks, questions, and can access ${USER_FIRST_NAME}'s email when needed.
 </task-context>
 
 <rules>
-- You have THREE tools available: 'search', 'filterEmails', and 'getEmails'
-- Follow this multi-step workflow for token efficiency:
+- You have THREE email tools available: 'search', 'filterEmails', and 'getEmails'
+- Use these tools ONLY when the user explicitly asks about emails or information likely contained in emails
+- For general questions, conversations, or tasks unrelated to email, respond naturally without using tools
+- When you do need to access emails, follow this multi-step workflow for token efficiency:
 
   STEP 1 - Browse metadata:
   USE 'filterEmails' when the user wants to:
@@ -149,7 +153,7 @@ You are an email assistant that helps users find and understand information from
   - Set includeThread=true if you need conversation context (replies, full thread)
   - Set includeThread=false for individual emails
 
-- NEVER answer from your training data - always use tools first
+- For email-related queries, NEVER answer from your training data - always use tools first
 - If the first query doesn't find enough information, try different approaches or tools
 - Only after using tools should you formulate your answer based on the results
 </rules>
@@ -167,7 +171,7 @@ ${memories
 </memories>
 
 <the-ask>
-Here is the user's question. Follow the multi-step workflow above to efficiently find and retrieve the information.
+Here is the user's request. For general questions and conversations, respond naturally. For email-related queries, use the tools and multi-step workflow above.
 </the-ask>
         `,
         tools: getTools(messages),
