@@ -6,10 +6,11 @@ import { messageHistoryToQuery } from "./utils";
 export const memoryToText = (memory: DB.Memory) =>
   `${memory.title}: ${memory.content}`;
 
-export const searchMemories = async (opts: { messages: MyMessage[] }) => {
-  const memories = await loadMemories();
-
-  const query = messageHistoryToQuery(opts.messages);
+export const searchMemoriesInner = async (
+  messageHistory: MyMessage[],
+  memories: DB.Memory[]
+) => {
+  const query = messageHistoryToQuery(messageHistory);
 
   const embeddingsRanking = await searchWithEmbeddings(
     query,
@@ -18,4 +19,10 @@ export const searchMemories = async (opts: { messages: MyMessage[] }) => {
   );
 
   return embeddingsRanking;
+};
+
+export const searchMemories = async (opts: { messages: MyMessage[] }) => {
+  const memories = await loadMemories();
+
+  return searchMemoriesInner(opts.messages, memories);
 };
