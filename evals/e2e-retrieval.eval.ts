@@ -38,4 +38,22 @@ evalite.each([
       toolCalls: result.steps.flatMap((step) => step.toolCalls),
     };
   },
+  columns: ({ input, output, expected }) => [
+    {
+      label: "Input",
+      value: input,
+    },
+    {
+      label: "Summary",
+      value: output.text,
+    },
+    {
+      label: "Tool Calls",
+      value: output.toolCalls,
+    },
+    {
+      label: "Expected",
+      value: expected,
+    },
+  ],
 });
