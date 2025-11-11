@@ -1,20 +1,20 @@
+import { memoryToText } from "@/app/memory-search";
 import {
   createMemory,
   DB,
   deleteMemory,
-  loadMemories,
   updateMemory,
 } from "@/lib/persistence-layer";
 import { google } from "@ai-sdk/google";
-import { convertToModelMessages, generateObject } from "ai";
+import { convertToModelMessages, generateObject, LanguageModel } from "ai";
 import { z } from "zod";
 import { MyMessage } from "./route";
-import { memoryToText } from "@/app/memory-search";
 
-export async function extractAndUpdateMemories(opts: {
+export const extractMemoriesInner = async (opts: {
   messages: MyMessage[];
   memories: DB.Memory[];
-}) {
+  model: LanguageModel;
+}) => {
   // Only include user and assistant messages, not tool calls
   // This is a cost-saving measure
   const filteredMessages = opts.messages.filter(
@@ -22,7 +22,7 @@ export async function extractAndUpdateMemories(opts: {
   );
 
   const memoriesResult = await generateObject({
-    model: google("gemini-2.5-flash"),
+    model: opts.model,
     schema: z.object({
       updates: z
         .array(
@@ -85,6 +85,19 @@ Be conservative - only add memories that will genuinely help personalize future 
   });
 
   const { updates, deletions, additions } = memoriesResult.object;
+
+  return { updates, deletions, additions };
+};
+
+export async function extractAndUpdateMemories(opts: {
+  messages: MyMessage[];
+  memories: DB.Memory[];
+}) {
+  const { updates, deletions, additions } = await extractMemoriesInner({
+    messages: opts.messages,
+    memories: opts.memories,
+    model: google("gemini-2.5-flash"),
+  });
 
   // Filter out deletions that are also being updated
   const filteredDeletions = deletions.filter(
