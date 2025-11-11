@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
+    "dev:eval": "evalite watch",
     "start": "next start",
     "cherry-pick": "ai-hero-cli cherry-pick --branch=live-run-through",
     "reset": "ai-hero-cli reset --branch=live-run-through"
