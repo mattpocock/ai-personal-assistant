@@ -124,8 +124,8 @@ importers:
         specifier: ^0.2.5
         version: 0.2.5
       evalite:
-        specifier: 1.0.0-beta.0
-        version: 1.0.0-beta.0(better-sqlite3@11.10.0)
+        specifier: 1.0.0-beta.2
+        version: 1.0.0-beta.2(better-sqlite3@11.10.0)
       tailwindcss:
         specifier: ^4
         version: 4.1.14
@@ -1958,8 +1958,8 @@ packages:
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
 
-  evalite@1.0.0-beta.0:
-    resolution: {integrity: sha512-iIsELlTJHkPzTnLGMPfZ/SI+vFFhUgZyua7tuvudfBkia4Cyyi73Ph41oS/7LtyWU10UiEmQtcyyZFJ1zDOv4g==}
+  evalite@1.0.0-beta.2:
+    resolution: {integrity: sha512-P6QyBfY2+fKM55rsowtAArusMb0jXkrqJJnMhl20cnjLxzMGY2UZdrVHicUfXIemIlxATQV5px2g7cN/6DLDoQ==}
     hasBin: true
     peerDependencies:
       better-sqlite3: ^11.6.0
@@ -2217,6 +2217,10 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  js-levenshtein@1.1.6:
+    resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
+    engines: {node: '>=0.10.0'}
 
   json-schema-ref-resolver@3.0.0:
     resolution: {integrity: sha512-hOrZIVL5jyYFjzk7+y7n5JDzGlU8rfWDuYyHwGa2WA8/pcmMHezp2xsVwxrebD/Q9t8Nc5DboieySDpCp4WG4A==}
@@ -5027,7 +5031,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
 
-  evalite@1.0.0-beta.0(better-sqlite3@11.10.0):
+  evalite@1.0.0-beta.2(better-sqlite3@11.10.0):
     dependencies:
       '@fastify/static': 8.3.0
       '@fastify/websocket': 11.2.0
@@ -5039,6 +5043,7 @@ snapshots:
       fastify: 5.6.2
       file-type: 19.6.0
       jiti: 2.6.1
+      js-levenshtein: 1.1.6
       table: 6.9.0
       tinyrainbow: 3.0.3
     optionalDependencies:
@@ -5371,6 +5376,8 @@ snapshots:
       '@isaacs/cliui': 8.0.2
 
   jiti@2.6.1: {}
+
+  js-levenshtein@1.1.6: {}
 
   json-schema-ref-resolver@3.0.0:
     dependencies:
