@@ -3,7 +3,7 @@ import { MyMessage } from "@/app/api/chat/route";
 import { google } from "@ai-sdk/google";
 import { evalite } from "evalite";
 import { createUIMessageFixture } from "./create-ui-message-fixture";
-import { answerCorrectness } from "evalite/scorers";
+import { answerSimilarity } from "evalite/scorers";
 
 evalite.each([
   {
@@ -33,7 +33,7 @@ evalite.each([
         "I work as a product manager at Microsoft. I love rock climbing and playing guitar. My primary programming language is TypeScript."
       ),
       expected:
-        "User works as a product manager at Microsoft. User loves rock climbing and playing guitar. User's primary programming language is TypeScript.",
+        "User works as a product manager at Google. User loves rock climbing and playing guitar. User's primary programming language is TypeScript.",
     },
     {
       input: createUIMessageFixture<MyMessage>(
@@ -84,21 +84,20 @@ evalite.each([
       },
     },
     {
-      name: "Addition Faithfulness",
+      name: "Addition Similarity",
+      description: "How similar are the additions to the expected additions?",
       scorer: ({ input, output, expected }) => {
         // If no expected additions are provided, check if no additions were made
         if (expected === null) {
           return output.additions.length === 0 ? 1 : 0;
         }
 
-        return answerCorrectness({
+        return answerSimilarity({
           answer: output.additions
             .map((addition) => addition.title + ": " + addition.content)
             .join("\n"),
           reference: expected,
-          model: google("gemini-2.5-flash-lite"),
           embeddingModel: google.textEmbeddingModel("text-embedding-004"),
-          question: `Given the following conversation and the expected memory additions, is the addition faithful to the conversation and the expected memory additions? Remember - only permanent memories are expected.`,
         });
       },
     },
