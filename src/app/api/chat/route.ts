@@ -10,7 +10,6 @@ import {
 } from "@/lib/persistence-layer";
 import { google } from "@ai-sdk/google";
 import {
-  convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
   InferUITools,
@@ -21,6 +20,12 @@ import {
 import { createAgent, getTools } from "./agent";
 import { extractAndUpdateMemories } from "./extract-memories";
 import { generateTitleForChat } from "./generate-title";
+import {
+  annotateMessageHistory as annotateHITLMessageHistory,
+  executeHITLDecisions,
+  findDecisionsToProcess,
+  ToolApprovalDataParts,
+} from "./hitl";
 import { getMCPTools } from "./mcp";
 
 // Allow streaming responses up to 30 seconds
@@ -34,7 +39,7 @@ export type MyMessage = UIMessage<
   never,
   {
     "frontend-action": "refresh-sidebar";
-  },
+  } & ToolApprovalDataParts,
   InferUITools<ReturnType<typeof getTools>>
 >;
 
@@ -73,6 +78,21 @@ export async function POST(req: Request) {
   if (mostRecentMessage.role !== "user") {
     return new Response("Last message must be from the user", {
       status: 400,
+    });
+  }
+
+  const mostRecentAssistantMessage = messages.findLast(
+    (message) => message.role === "assistant"
+  );
+
+  const hitlResult = findDecisionsToProcess({
+    mostRecentUserMessage: mostRecentMessage,
+    mostRecentAssistantMessage,
+  });
+
+  if ("status" in hitlResult) {
+    return new Response(hitlResult.message, {
+      status: hitlResult.status,
     });
   }
 
@@ -131,17 +151,25 @@ export async function POST(req: Request) {
 
       const mcpTools = await getMCPTools();
 
+      const messagesWithToolResults = await executeHITLDecisions({
+        decisions: hitlResult,
+        mcpTools,
+        writer,
+        messages: messageHistoryForLLM,
+      });
+
       const agent = createAgent({
         memories: memories.map((memory) => memory.item),
         relatedChats: relatedChats.map((chat) => chat.item),
-        messages: messageHistoryForLLM,
+        messages: messagesWithToolResults,
         model: google("gemini-2.5-flash"),
         stopWhen: stepCountIs(10),
         mcpTools,
+        writer,
       });
 
       const result = agent.stream({
-        messages: convertToModelMessages(messageHistoryForLLM),
+        messages: annotateHITLMessageHistory(messagesWithToolResults),
       });
 
       writer.merge(

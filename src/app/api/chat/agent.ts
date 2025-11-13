@@ -1,9 +1,11 @@
 import {
   Experimental_Agent as Agent,
+  hasToolCall,
   LanguageModel,
   StopCondition,
   ToolSet,
   UIMessage,
+  UIMessageStreamWriter,
 } from "ai";
 import { MyMessage } from "./route";
 import { searchTool } from "./search-tool";
@@ -12,6 +14,7 @@ import { getEmailsTool } from "./get-emails-tool";
 import { DB } from "@/lib/persistence-layer";
 import { chatToText } from "@/app/utils";
 import { memoryToText } from "@/app/memory-search";
+import { makeHITLToolSet } from "./hitl";
 
 export const getTools = (messages: UIMessage[]) => ({
   search: searchTool(messages),
@@ -29,11 +32,19 @@ export const createAgent = (opts: {
   memories: DB.Memory[];
   relatedChats: DB.Chat[];
   mcpTools: ToolSet;
+  writer?: UIMessageStreamWriter;
 }) =>
   new Agent({
     model: opts.model,
-    tools: { ...getTools(opts.messages), ...opts.mcpTools },
-    stopWhen: opts.stopWhen,
+    tools: {
+      ...getTools(opts.messages),
+      ...makeHITLToolSet(opts.mcpTools, opts.writer),
+    },
+    stopWhen: [
+      opts.stopWhen,
+      // Stop when any MCP tool is called
+      ...Object.keys(opts.mcpTools).map((toolName) => hasToolCall(toolName)),
+    ],
     system: `
 <task-context>
 You are a personal assistant to ${USER_FIRST_NAME} ${USER_LAST_NAME}. You help with general tasks, questions, and can access ${USER_FIRST_NAME}'s email when needed.
