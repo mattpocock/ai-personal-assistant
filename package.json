@@ -14,6 +14,7 @@
     "@ai-sdk/anthropic": "^2.0.53",
     "@ai-sdk/google": "^2.0.44",
     "@ai-sdk/react": "^2.0.109",
+    "@ai-sdk/mcp": "^0.0.8",
     "@langchain/textsplitters": "^1.0.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
