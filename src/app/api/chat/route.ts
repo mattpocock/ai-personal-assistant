@@ -27,6 +27,7 @@ import {
   ToolApprovalDataParts,
 } from "./hitl";
 import { getMCPTools } from "./mcp";
+import { filterToolsByApps, parseAppIdsFromMessage } from "./apps-config";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -150,11 +151,15 @@ export async function POST(req: Request) {
 
       const relatedChats = await searchForRelatedChats(chatId, messages);
 
-      const mcpTools = await getMCPTools();
+      const taggedAppIds = parseAppIdsFromMessage(body.message);
+      const allMcpTools = await getMCPTools();
+      const mcpTools = filterToolsByApps(allMcpTools, taggedAppIds);
 
       const messagesWithToolResults = await executeHITLDecisions({
         decisions: hitlResult,
-        mcpTools,
+        // We want to allow execution of any MCP tool, not just
+        // the ones that are tagged to the message
+        mcpTools: allMcpTools,
         writer,
         messages: messageHistoryForLLM,
       });
