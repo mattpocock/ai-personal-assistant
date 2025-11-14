@@ -23,6 +23,7 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
+import { PromptInputAppButtons } from "@/components/ai-elements/prompt-input-app-buttons";
 import {
   Reasoning,
   ReasoningContent,
@@ -49,12 +50,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
 import { Fragment, startTransition, useMemo, useState } from "react";
+import { parseAppIdsFromMessage } from "./api/chat/apps-config";
 import type { MyMessage } from "./api/chat/route";
 import { useFocusWhenNoChatIdPresent } from "./use-focus-chat-when-new-chat-button-pressed";
 
 export const Chat = (props: { chat: DB.Chat | null }) => {
   const [backupChatId, setBackupChatId] = useState(crypto.randomUUID());
   const [input, setInput] = useState("");
+  const [taggedAppIds, setTaggedAppIds] = useState<string[]>(() => {
+    const lastUserMessage = props.chat?.messages
+      ?.filter((m) => m.role === "user")
+      .at(-1);
+    return parseAppIdsFromMessage(lastUserMessage);
+  });
   const searchParams = useSearchParams();
   const router = useRouter();
   const chatIdFromSearchParams = searchParams.get("chatId");
@@ -129,6 +137,14 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
   const isGivingFeedback = !!toolIdGivingFeedbackOn;
   const shouldDisableInput = outstandingDecisions.size > 0 && !isGivingFeedback;
 
+  const handleToggleApp = (appId: string) => {
+    setTaggedAppIds((prev) =>
+      prev.includes(appId)
+        ? prev.filter((id) => id !== appId)
+        : [...prev, appId]
+    );
+  };
+
   const handlePressApprove = (toolId: string) => {
     wrappedSendMessage({
       parts: [
@@ -191,9 +207,20 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
     }
 
     startTransition(() => {
+      const appTagParts = taggedAppIds.map((appId) => ({
+        type: "data-app-tag" as const,
+        data: { appId },
+      }));
+
       wrappedSendMessage({
-        text: message.text || "Sent with attachments",
-        files: message.files,
+        parts: [
+          {
+            type: "text",
+            text: message.text || "Sent with attachments",
+          },
+          ...appTagParts,
+          ...(message.files ?? []),
+        ],
       });
 
       setInput("");
@@ -576,6 +603,10 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
                   <PromptInputActionAddAttachments />
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
+              <PromptInputAppButtons
+                taggedAppIds={taggedAppIds}
+                onToggle={handleToggleApp}
+              />
             </PromptInputTools>
             <PromptInputSubmit disabled={!input && !status} status={status} />
           </PromptInputToolbar>
