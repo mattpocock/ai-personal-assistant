@@ -35,17 +35,22 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { Tool, ToolContent, ToolHeader } from "@/components/ai-elements/tool";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+} from "@/components/ai-elements/tool";
 import { DB } from "@/lib/persistence-layer";
 import { useChat } from "@ai-sdk/react";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { Fragment, startTransition, useState } from "react";
-import type { MyMessage } from "./api/chat/route";
-import { useFocusWhenNoChatIdPresent } from "./use-focus-chat-when-new-chat-button-pressed";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
+import { Fragment, startTransition, useMemo, useState } from "react";
+import type { MyMessage } from "./api/chat/route";
+import { useFocusWhenNoChatIdPresent } from "./use-focus-chat-when-new-chat-button-pressed";
 
 export const Chat = (props: { chat: DB.Chat | null }) => {
   const [backupChatId, setBackupChatId] = useState(crypto.randomUUID());
@@ -84,6 +89,94 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
 
   const ref = useFocusWhenNoChatIdPresent(chatIdFromSearchParams);
 
+  const wrappedSendMessage: typeof sendMessage = async (message, options) => {
+    return sendMessage(message, {
+      ...options,
+      body: {
+        id: chatIdInUse,
+        ...options?.body,
+      },
+    });
+  };
+
+  const outstandingDecisions = useMemo(() => {
+    const allMessageParts = messages.flatMap((message) => message.parts);
+
+    const toolIdsOfAllRequests = new Set(
+      allMessageParts
+        .filter((part) => part.type === "data-approval-request")
+        .map((part) => part.data.tool.id)
+    );
+
+    const toolIdsOfAllDecisions = new Set(
+      allMessageParts
+        .filter((part) => part.type === "data-approval-decision")
+        .map((part) => part.data.toolId)
+    );
+
+    // Get the tool IDs that have requests but no decisions
+    const outstandingDecisions = toolIdsOfAllRequests.difference(
+      toolIdsOfAllDecisions
+    );
+
+    return outstandingDecisions;
+  }, [messages]);
+
+  const [toolIdGivingFeedbackOn, setToolIdGivingFeedbackOn] = useState<
+    string | null
+  >(null);
+
+  const isGivingFeedback = !!toolIdGivingFeedbackOn;
+  const shouldDisableInput = outstandingDecisions.size > 0 && !isGivingFeedback;
+
+  const handlePressApprove = (toolId: string) => {
+    wrappedSendMessage({
+      parts: [
+        {
+          type: "data-approval-decision",
+          data: {
+            toolId,
+            decision: {
+              type: "approve",
+            },
+          },
+        },
+      ],
+    });
+  };
+
+  const handlePressReject = (toolId: string) => {
+    setToolIdGivingFeedbackOn(toolId);
+    setInput("");
+    // Waits for the 'disabled' state to be removed from the input
+    // before focusing the input
+    setTimeout(() => {
+      ref.current?.focus();
+    }, 1);
+  };
+
+  const handleSubmitRejectReason = () => {
+    if (!toolIdGivingFeedbackOn) return;
+
+    wrappedSendMessage({
+      parts: [
+        {
+          type: "data-approval-decision",
+          data: {
+            toolId: toolIdGivingFeedbackOn,
+            decision: {
+              type: "reject",
+              reason: input,
+            },
+          },
+        },
+      ],
+    });
+
+    setToolIdGivingFeedbackOn(null);
+    setInput("");
+  };
+
   const handleSubmit = (message: PromptInputMessage) => {
     const hasText = Boolean(message.text);
     const hasAttachments = Boolean(message.files?.length);
@@ -92,18 +185,16 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
       return;
     }
 
+    if (isGivingFeedback) {
+      handleSubmitRejectReason();
+      return;
+    }
+
     startTransition(() => {
-      sendMessage(
-        {
-          text: message.text || "Sent with attachments",
-          files: message.files,
-        },
-        {
-          body: {
-            id: chatIdInUse,
-          },
-        }
-      );
+      wrappedSendMessage({
+        text: message.text || "Sent with attachments",
+        files: message.files,
+      });
 
       setInput("");
 
@@ -406,6 +497,43 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
                         </ToolContent>
                       </Tool>
                     );
+                  case "data-approval-request":
+                    return (
+                      <Tool
+                        key={`${message.id}-${i}`}
+                        className="w-full"
+                        defaultOpen={true}
+                      >
+                        <ToolHeader
+                          title={`Approval Request: ${part.data.tool.name}`}
+                          type={"tool-approval" as const}
+                          state="input-available"
+                        />
+
+                        <ToolContent>
+                          <ToolInput input={part.data.tool.input} />
+                          {outstandingDecisions.has(part.data.tool.id) && (
+                            <div className="flex gap-2 p-4 pt-0">
+                              <Button
+                                onClick={() =>
+                                  handlePressApprove(part.data.tool.id)
+                                }
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  handlePressReject(part.data.tool.id)
+                                }
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </ToolContent>
+                      </Tool>
+                    );
                   default:
                     return null;
                 }
@@ -430,6 +558,12 @@ export const Chat = (props: { chat: DB.Chat | null }) => {
             <PromptInputTextarea
               onChange={(e) => setInput(e.target.value)}
               value={input}
+              placeholder={
+                isGivingFeedback
+                  ? "Why are you rejecting this tool?"
+                  : "What would you like to know?"
+              }
+              disabled={shouldDisableInput}
               ref={ref}
               autoFocus
             />
