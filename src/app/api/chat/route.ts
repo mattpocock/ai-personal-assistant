@@ -39,6 +39,7 @@ export type MyMessage = UIMessage<
   never,
   {
     "frontend-action": "refresh-sidebar";
+    "app-tag": { appId: string };
   } & ToolApprovalDataParts,
   InferUITools<ReturnType<typeof getTools>>
 >;
