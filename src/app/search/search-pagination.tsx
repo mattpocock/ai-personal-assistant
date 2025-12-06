@@ -90,9 +90,7 @@ export function SearchPagination({
             href={currentPage < totalPages ? buildUrl(currentPage + 1) : "#"}
             aria-disabled={currentPage === totalPages}
             className={
-              currentPage === totalPages
-                ? "pointer-events-none opacity-50"
-                : ""
+              currentPage === totalPages ? "pointer-events-none opacity-50" : ""
             }
           />
         </PaginationItem>

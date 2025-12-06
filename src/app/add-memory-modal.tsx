@@ -43,7 +43,10 @@ export function AddMemoryModal({
     if (!title.trim() || !content.trim()) return;
 
     startTransition(async () => {
-      await createMemoryAction({ title: title.trim(), content: content.trim() });
+      await createMemoryAction({
+        title: title.trim(),
+        content: content.trim(),
+      });
       setTitle("");
       setContent("");
       onOpenChange(false);

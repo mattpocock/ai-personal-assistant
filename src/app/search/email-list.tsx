@@ -37,7 +37,9 @@ function EmailCard({ email }: { email: Email }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-1">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base mb-0.5">{email.subject}</h3>
+              <h3 className="font-semibold text-base mb-0.5">
+                {email.subject}
+              </h3>
               <p className="text-xs text-muted-foreground">{email.from}</p>
             </div>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -89,9 +91,7 @@ export function EmailList({ emails }: { emails: Email[] }) {
       <div className="text-center py-12">
         <MailIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">No emails found</h3>
-        <p className="text-muted-foreground">
-          Try adjusting your search query
-        </p>
+        <p className="text-muted-foreground">Try adjusting your search query</p>
       </div>
     );
   }

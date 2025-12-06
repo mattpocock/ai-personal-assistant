@@ -30,10 +30,7 @@ export function PerPageSelector({
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-muted-foreground">Show</span>
-      <Select
-        value={currentPerPage.toString()}
-        onValueChange={handleChange}
-      >
+      <Select value={currentPerPage.toString()} onValueChange={handleChange}>
         <SelectTrigger className="w-[70px] h-8">
           <SelectValue />
         </SelectTrigger>
