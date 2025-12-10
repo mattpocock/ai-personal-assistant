@@ -7,7 +7,7 @@ import { useState } from "react";
 
 type Email = {
   id: string;
-  from: string;
+  from?: string;
   subject: string;
   preview: string;
   content: string;
@@ -40,7 +40,9 @@ function EmailCard({ email }: { email: Email }) {
               <h3 className="font-semibold text-base mb-0.5">
                 {email.subject}
               </h3>
-              <p className="text-xs text-muted-foreground">{email.from}</p>
+              {email.from && (
+                <p className="text-xs text-muted-foreground">{email.from}</p>
+              )}
             </div>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {formatDate(email.date)}

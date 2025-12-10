@@ -12,8 +12,8 @@ import { SideBar } from "@/components/side-bar";
 interface Email {
   id: string;
   threadId: string;
-  from: string;
-  to: string | string[];
+  from?: string;
+  to?: string | string[];
   cc?: string[];
   subject: string;
   body: string;
@@ -26,7 +26,7 @@ interface Email {
 }
 
 async function loadEmails(): Promise<Email[]> {
-  const filePath = path.join(process.cwd(), "data", "emails.json");
+  const filePath = path.join(process.cwd(), "data", "templates.json");
   const fileContent = await fs.readFile(filePath, "utf-8");
   return JSON.parse(fileContent);
 }
@@ -58,7 +58,7 @@ export default async function SearchPage(props: {
     ? transformedEmails.filter(
         (email) =>
           email.subject.toLowerCase().includes(query.toLowerCase()) ||
-          email.from.toLowerCase().includes(query.toLowerCase()) ||
+          email.from?.toLowerCase().includes(query.toLowerCase()) ||
           email.content.toLowerCase().includes(query.toLowerCase())
       )
     : transformedEmails;
