@@ -1,4 +1,5 @@
 import {
+  chunkEmails,
   loadEmails,
   reciprocalRankFusion,
   searchWithBM25,
@@ -27,11 +28,14 @@ export const searchTool = tool({
     console.log("Search query:", searchQuery);
 
     const emails = await loadEmails();
+    const emailChunks = await chunkEmails(emails);
 
     // Use search algorithm from lesson 2.2
-    const bm25Results = keywords ? await searchWithBM25(keywords, emails) : [];
+    const bm25Results = keywords
+      ? await searchWithBM25(keywords, emailChunks)
+      : [];
     const embeddingResults = searchQuery
-      ? await searchWithEmbeddings(searchQuery, emails)
+      ? await searchWithEmbeddings(searchQuery, emailChunks)
       : [];
     const rrfResults = reciprocalRankFusion([
       bm25Results.slice(0, 30), // Only take the top 30 results from each search
@@ -44,11 +48,8 @@ export const searchTool = tool({
       .filter((r) => r.score > 0) // Only return emails with a score greater than 0
       .map((r) => ({
         id: r.email.id,
-        from: r.email.from,
-        to: r.email.to,
         subject: r.email.subject,
-        body: r.email.body,
-        timestamp: r.email.timestamp,
+        body: r.email.chunk,
         score: r.score,
       }));
 

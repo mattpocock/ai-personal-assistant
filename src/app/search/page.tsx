@@ -26,8 +26,10 @@ export default async function SearchPage(props: {
       id: email.id,
       from: email.from,
       subject: email.subject,
-      preview: email.body.substring(0, 100) + "...",
-      content: email.body,
+      preview: email.chunk.substring(0, 100) + "...",
+      content: email.chunk,
+      chunkIndex: email.index,
+      totalChunks: email.totalChunks,
       date: email.timestamp,
       score: score,
     }))
