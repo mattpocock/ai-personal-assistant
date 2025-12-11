@@ -12,6 +12,8 @@ type Email = {
   preview: string;
   content: string;
   date: string;
+  chunkIndex: number;
+  totalChunks: number;
 };
 
 function EmailCard({ email }: { email: Email }) {
@@ -38,7 +40,8 @@ function EmailCard({ email }: { email: Email }) {
           <div className="flex items-start justify-between gap-4 mb-1">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base mb-0.5">
-                {email.subject}
+                {email.subject} (Chunk {email.chunkIndex + 1} of{" "}
+                {email.totalChunks})
               </h3>
               <p className="text-xs text-muted-foreground">{email.from}</p>
             </div>
