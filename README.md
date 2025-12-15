@@ -4,7 +4,7 @@ This is the project workspace for the [**Build a Personal Assistant in TypeScrip
 
 ## What You'll Build
 
-Over the course of the workshop, you'll add these capabilities to your assistant:
+During this workshop, you'll add these capabilities to your assistant:
 
 - **Hybrid retrieval system** (BM25 + semantic embeddings + rank fusion) to search 547 emails
 - **Memory system** with semantic recall, working memory, and episodic learning
