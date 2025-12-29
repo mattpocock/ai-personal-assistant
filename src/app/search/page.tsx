@@ -3,32 +3,31 @@ import { SearchInput } from "./search-input";
 import { EmailList } from "./email-list";
 import { SearchPagination } from "./search-pagination";
 import { PerPageSelector } from "./per-page-selector";
-import fs from "fs/promises";
-import path from "path";
 import { loadChats, loadMemories } from "@/lib/persistence-layer";
 import { CHAT_LIMIT } from "../page";
 import { SideBar } from "@/components/side-bar";
+import { loadVaultEntries } from "@/lib/vault-loader";
 
-interface Email {
+interface VaultEmail {
   id: string;
-  threadId: string;
   from: string;
-  to: string | string[];
-  cc?: string[];
   subject: string;
   body: string;
   timestamp: string;
-  inReplyTo?: string;
-  references?: string[];
-  labels?: string[];
-  arcId?: string;
-  phaseId?: number;
 }
 
-async function loadEmails(): Promise<Email[]> {
-  const filePath = path.join(process.cwd(), "data", "emails.json");
-  const fileContent = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(fileContent);
+async function loadVaultNotes(): Promise<VaultEmail[]> {
+  const vaultPath = process.env.WORKING_KNOWLEDGE_VAULT!;
+
+  const entries = await loadVaultEntries(vaultPath);
+
+  return entries.map((entry) => ({
+    id: entry.id,
+    from: entry.relativePath,
+    subject: entry.title,
+    body: entry.content,
+    timestamp: entry.date,
+  }));
 }
 
 export default async function SearchPage(props: {
@@ -39,7 +38,7 @@ export default async function SearchPage(props: {
   const page = Number(searchParams.page) || 1;
   const perPage = Number(searchParams.perPage) || 10;
 
-  const allEmails = await loadEmails();
+  const allEmails = await loadVaultNotes();
 
   // Transform emails to match the expected format
   const transformedEmails = allEmails

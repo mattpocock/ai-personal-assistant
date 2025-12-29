@@ -65,7 +65,7 @@ export function SideBar({
                 type="video/mp4"
               />
             </video>
-            <span className="text-sm font-semibold">Personal Assistant</span>
+            <span className="text-sm font-semibold">MarkDown Assistant</span>
           </Link>
         </div>
       </SidebarHeader>
