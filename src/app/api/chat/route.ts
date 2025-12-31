@@ -1,26 +1,42 @@
 import {
   appendToChatMessages,
   createChat,
-  DB,
   getChat,
   updateChatTitle,
 } from "@/lib/persistence-layer";
+import { searchMemories } from "@/app/memory-search";
+import { extractAndUpdateMemories } from "./extract-memories";
 import { google } from "@ai-sdk/google";
 import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  InferUITools,
   safeValidateUIMessages,
-  streamText,
   UIMessage,
+  stepCountIs,
+  InferUITools,
+  ToolSet,
 } from "ai";
+import { filterToolsByApps, parseAppIdsFromMessage } from "./apps-config";
 import { generateTitleForChat } from "./generate-title";
-import { ToolApprovalDataParts } from "./hitl";
-import { getTools } from "./agent";
+import { searchMessages } from "@/app/message-search";
+import { searchForRelatedChats } from "@/app/search-for-related-chats";
+import { reflectOnChat } from "@/app/reflect-on-chat";
+import { createAgent, getTools } from "./agent";
+import { getMCPTools } from "./mcp";
+import {
+  annotateMessageHistory as annotateHITLMessageHistory,
+  executeHITLDecisions,
+  findDecisionsToProcess,
+  ToolApprovalDataParts,
+} from "./hitl";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+const MEMORIES_TO_USE = 5;
+const MESSAGE_HISTORY_LENGTH = 10;
+const OLD_MESSAGES_TO_USE = 10;
 
 export type MyMessage = UIMessage<
   never,
@@ -33,14 +49,21 @@ export type MyMessage = UIMessage<
 
 export async function POST(req: Request) {
   const body: {
-    messages: UIMessage[];
+    message: MyMessage;
     id: string;
   } = await req.json();
 
   const chatId = body.id;
+  let chat = await getChat(chatId);
+
+  const recentMessages = [...(chat?.messages ?? []), body.message].slice(
+    -MESSAGE_HISTORY_LENGTH
+  );
+
+  const olderMessages = chat?.messages.slice(0, -MESSAGE_HISTORY_LENGTH);
 
   const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
-    messages: body.messages,
+    messages: recentMessages,
   });
 
   if (!validatedMessagesResult.success) {
@@ -48,8 +71,6 @@ export async function POST(req: Request) {
   }
 
   const messages = validatedMessagesResult.data;
-
-  let chat = await getChat(chatId);
   const mostRecentMessage = messages[messages.length - 1];
 
   if (!mostRecentMessage) {
@@ -61,6 +82,21 @@ export async function POST(req: Request) {
       status: 400,
     });
   }
+
+  const allMemories = await searchMemories({ messages });
+  const memories = allMemories.slice(0, MEMORIES_TO_USE);
+
+  const oldMessagesToUse = await searchMessages({
+    recentMessages: messages,
+    olderMessages: olderMessages ?? [],
+  }).then((results) =>
+    results
+      .slice(0, OLD_MESSAGES_TO_USE)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.item)
+  );
+  console.log("oldMessagesToUse:", oldMessagesToUse);
+  const messageHistoryforLLM = [...oldMessagesToUse, ...messages];
 
   const stream = createUIMessageStream<MyMessage>({
     execute: async ({ writer }) => {
@@ -95,9 +131,47 @@ export async function POST(req: Request) {
         await appendToChatMessages(chatId, [mostRecentMessage]);
       }
 
-      const result = streamText({
-        model: google("gemini-2.5-flash-lite"),
-        messages: convertToModelMessages(messages),
+      const relatedChats = await searchForRelatedChats(chatId, messages);
+
+      const taggedAppIds = parseAppIdsFromMessage(body.message);
+
+      const mostRecentAssistantMessage = messages.findLast(
+        (message) => message.role === "assistant"
+      );
+
+      const hitlResult = findDecisionsToProcess({
+        mostRecentUserMessage: mostRecentMessage,
+        mostRecentAssistantMessage,
+      });
+
+      if ("status" in hitlResult) {
+        return new Response(hitlResult.message, {
+          status: hitlResult.status,
+        });
+      }
+
+      const allMcpTools = await getMCPTools();
+      // ADDED: Filter tools to only those matching tagged app IDs
+      const mcpTools = filterToolsByApps(allMcpTools, taggedAppIds);
+
+      const messagesWithToolResults = await executeHITLDecisions({
+        decisions: hitlResult,
+        mcpTools: allMcpTools,
+        writer,
+        messages: messageHistoryforLLM,
+      });
+
+      const agent = createAgent({
+        memories: memories.map((memory) => memory.item),
+        relatedChats: relatedChats.map((chat) => chat.item),
+        messages: messagesWithToolResults,
+        model: google("gemini-2.5-flash"),
+        stopWhen: stepCountIs(10),
+        mcpTools,
+        writer,
+      });
+      const result = agent.stream({
+        messages: convertToModelMessages(messagesWithToolResults),
       });
 
       writer.merge(
@@ -112,6 +186,11 @@ export async function POST(req: Request) {
     generateId: () => crypto.randomUUID(),
     onFinish: async ({ responseMessage }) => {
       await appendToChatMessages(chatId, [responseMessage]);
+      await extractAndUpdateMemories({
+        messages: [...messages, responseMessage],
+        memories: memories.map((m) => m.item),
+      });
+      await reflectOnChat(chatId);
     },
   });
 
