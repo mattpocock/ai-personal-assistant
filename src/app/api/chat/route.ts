@@ -10,11 +10,14 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  InferUITools,
   safeValidateUIMessages,
   streamText,
   UIMessage,
 } from "ai";
 import { generateTitleForChat } from "./generate-title";
+import { ToolApprovalDataParts } from "./hitl";
+import { getTools } from "./agent";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -23,7 +26,9 @@ export type MyMessage = UIMessage<
   never,
   {
     "frontend-action": "refresh-sidebar";
-  }
+    "app-tag": { appId: string };
+  } & ToolApprovalDataParts,
+  InferUITools<ReturnType<typeof getTools>>
 >;
 
 export async function POST(req: Request) {
