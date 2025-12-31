@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "cherry-pick": "ai-hero-cli cherry-pick --branch=live-run-through",
+    "dev:eval": "evalite watch",
     "reset": "ai-hero-cli reset --branch=live-run-through",
     "pull": "ai-hero-cli pull"
   },
