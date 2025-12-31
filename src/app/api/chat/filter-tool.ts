@@ -2,7 +2,6 @@
 import { loadEmails } from "@/app/search";
 import { tool } from "ai";
 import { z } from "zod";
-import { th } from "zod/v4/locales";
 
 export const filterEmailsTool = tool({
   description:
