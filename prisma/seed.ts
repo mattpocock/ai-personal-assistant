@@ -1,7 +1,7 @@
 // Phase 1: Unique Track Extraction Only
 // Database operations will be added in future phases
 
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile, readdir } from "fs/promises";
 import path from "path";
 
 // Types
@@ -39,21 +39,38 @@ interface UniqueTrack {
 }
 
 /**
- * Load spotify-test.json from /data directory
+ * Load all Spotify JSON files from /data directory
  */
-async function loadSpotifyTestFile(): Promise<SpotifyStreamingRecord[]> {
-  console.log("Loading spotify-test.json...");
+async function loadSpotifyJsonFiles(): Promise<SpotifyStreamingRecord[]> {
+  console.log("Loading Spotify JSON files from /data directory...");
   const dataDir = path.join(process.cwd(), "data");
-  const filePath = path.join(dataDir, "spotify-test.json");
+  const files = await readdir(dataDir);
 
-  const fileContent = await readFile(filePath, "utf-8");
-  const data = JSON.parse(fileContent);
+  // Filter for Spotify JSON files (files containing 'spotify' in the name)
+  const spotifyFiles = files.filter(
+    (f) => f.toLowerCase().includes("spotify") && f.endsWith(".json")
+  );
 
-  // Handle both single object and array of objects
-  const records: SpotifyStreamingRecord[] = Array.isArray(data) ? data : [data];
+  console.log(`Found ${spotifyFiles.length} Spotify JSON file(s)`);
 
-  console.log(`  - Loaded ${records.length} records from spotify-test.json`);
-  return records;
+  const allRecords: SpotifyStreamingRecord[] = [];
+
+  for (const file of spotifyFiles) {
+    const filePath = path.join(dataDir, file);
+    const fileContent = await readFile(filePath, "utf-8");
+    const data = JSON.parse(fileContent);
+
+    // Handle both single object and array of objects
+    const records: SpotifyStreamingRecord[] = Array.isArray(data)
+      ? data
+      : [data];
+    allRecords.push(...records);
+
+    console.log(`  - Loaded ${records.length} records from ${file}`);
+  }
+
+  console.log(`Total records loaded: ${allRecords.length}`);
+  return allRecords;
 }
 
 /**
@@ -97,8 +114,8 @@ export async function main() {
   console.log("=== Spotify Data Loading Script - Phase 1: Unique Track Extraction ===\n");
 
   try {
-    // Load test file
-    const records = await loadSpotifyTestFile();
+    // Load all Spotify JSON files
+    const records = await loadSpotifyJsonFiles();
 
     // Extract unique tracks
     const uniqueTracks = extractUniqueTracks(records);
