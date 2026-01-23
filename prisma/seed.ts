@@ -268,7 +268,7 @@ function mapToStreamingHistoryInput(
 }
 
 /**
- * Insert tracks into database using upsert
+ * Insert tracks into database using batch operations
  * Returns a map of spotifyTrackUri -> trackId for foreign key relationships
  */
 async function insertTracks(
@@ -277,31 +277,34 @@ async function insertTracks(
 ): Promise<Map<string, string>> {
   console.log(`\n=== Inserting ${tracks.length} Tracks ===`);
 
+  // First, try to insert all new tracks in bulk
+  const trackInputs = tracks.map(mapToTrackInput);
+  const createResult = await tx.track.createMany({
+    data: trackInputs,
+    skipDuplicates: true, // Skip tracks that already exist
+  });
+
+  console.log(`  ✓ Inserted ${createResult.count} new tracks`);
+
+  // Now fetch all tracks to build the ID map
+  const spotifyUris = tracks.map((t) => t.spotifyTrackUri);
+  const allTracks = await tx.track.findMany({
+    where: {
+      spotifyTrackUri: { in: spotifyUris },
+    },
+    select: {
+      id: true,
+      spotifyTrackUri: true,
+    },
+  });
+
+  // Build the map
   const trackIdMap = new Map<string, string>();
-  let insertedCount = 0;
-  let updatedCount = 0;
-
-  for (const track of tracks) {
-    const result = await tx.track.upsert({
-      where: { spotifyTrackUri: track.spotifyTrackUri },
-      update: {
-        trackName: track.trackName,
-        artistName: track.artistName,
-        albumName: track.albumName,
-      },
-      create: mapToTrackInput(track),
-    });
-
-    trackIdMap.set(track.spotifyTrackUri, result.id);
-
-    if (result.createdAt.getTime() === result.updatedAt.getTime()) {
-      insertedCount++;
-    } else {
-      updatedCount++;
-    }
+  for (const track of allTracks) {
+    trackIdMap.set(track.spotifyTrackUri, track.id);
   }
 
-  console.log(`  ✓ Inserted: ${insertedCount}, Updated: ${updatedCount}`);
+  console.log(`  ✓ Mapped ${trackIdMap.size} tracks to IDs`);
   return trackIdMap;
 }
 
@@ -318,41 +321,31 @@ async function insertLyrics(
   const tracksWithLyrics = tracks.filter((t) => t.lyrics);
   console.log(`  Found ${tracksWithLyrics.length} tracks with lyrics`);
 
-  let successCount = 0;
-  let skipCount = 0;
+  if (tracksWithLyrics.length === 0) {
+    console.log(`  ✓ No lyrics to insert`);
+    return;
+  }
 
+  // Prepare lyrics data
+  const lyricsData = [];
   for (const track of tracksWithLyrics) {
     const trackId = trackIdMap.get(track.spotifyTrackUri);
-    if (!trackId) {
-      console.warn(`  ⚠ No trackId found for ${track.spotifyTrackUri}`);
-      skipCount++;
-      continue;
-    }
-
-    try {
-      await tx.lyrics.upsert({
-        where: { trackId },
-        update: {
-          lyricsBody: track.lyrics!.lyricsBody,
-          lyricsLanguage: track.lyrics!.lyricsLanguage,
-        },
-        create: {
-          trackId,
-          lyricsBody: track.lyrics!.lyricsBody,
-          lyricsLanguage: track.lyrics!.lyricsLanguage,
-        },
+    if (trackId && track.lyrics) {
+      lyricsData.push({
+        trackId,
+        lyricsBody: track.lyrics.lyricsBody,
+        lyricsLanguage: track.lyrics.lyricsLanguage,
       });
-      successCount++;
-    } catch (error) {
-      console.error(
-        `  ✗ Failed to insert lyrics for ${track.trackName}:`,
-        error
-      );
-      skipCount++;
     }
   }
 
-  console.log(`  ✓ Inserted: ${successCount}, Skipped: ${skipCount}`);
+  // Insert in bulk
+  const result = await tx.lyrics.createMany({
+    data: lyricsData,
+    skipDuplicates: true,
+  });
+
+  console.log(`  ✓ Inserted: ${result.count}`);
 }
 
 /**
@@ -413,7 +406,7 @@ async function seedDatabase(
       },
       {
         maxWait: 20000, // Maximum time to wait for transaction to start (20 seconds)
-        timeout: 60000, // Maximum time for transaction to complete (60 seconds)
+        timeout: 100000, // Maximum time for transaction to complete (100 seconds),
       }
     );
 
@@ -453,43 +446,90 @@ async function verifySeeding(): Promise<void> {
 // Main Function
 
 export async function main() {
-  console.log(
-    "=== Spotify Data Loading Script - Phase 3: Complete Pipeline ===\n"
-  );
+  // Check for --db-only flag to skip data loading and lyrics fetching
+  const dbOnly = process.argv.includes("--db-only");
+
+  if (dbOnly) {
+    console.log(
+      "=== Spotify Data Loading Script - Phase 3 Only: Database Insertion ===\n"
+    );
+    console.log("Loading data from existing JSON files...\n");
+  } else {
+    console.log(
+      "=== Spotify Data Loading Script - Phase 3: Complete Pipeline ===\n"
+    );
+  }
 
   try {
-    // Phase 1: Load all Spotify JSON files
-    const records = await loadSpotifyJsonFiles();
-
-    // Phase 2: Extract unique tracks
-    const uniqueTracks = extractUniqueTracks(records);
-
-    // Output results to console
-    console.log("\n=== Unique Tracks Extracted ===");
-    console.log(`Total records: ${records.length}`);
-    console.log(`Unique tracks: ${uniqueTracks.length}`);
-
-    console.log("\nSample tracks:");
-    uniqueTracks.slice(0, 5).forEach((track) => {
-      console.log(`  - ${track.trackName} by ${track.artistName}`);
-    });
-
-    // Save extracted tracks to JSON file for inspection
     const dataDir = path.join(process.cwd(), "data");
-    const extractedTracksPath = path.join(dataDir, "extracted-tracks.json");
-    await writeFile(extractedTracksPath, JSON.stringify(uniqueTracks, null, 2));
-    console.log(`\nExtracted tracks saved to: ${extractedTracksPath}`);
+    let records: SpotifyStreamingRecord[];
+    let tracksWithLyrics: TrackWithLyrics[];
 
-    // Phase 2: Fetch lyrics for all tracks
-    const tracksWithLyrics = await fetchAllLyrics(uniqueTracks);
+    if (dbOnly) {
+      // Load from existing JSON files
+      const tracksWithLyricsPath = path.join(
+        dataDir,
+        "tracks-with-lyrics.json"
+      );
 
-    // Save tracks with lyrics to JSON file
-    const tracksWithLyricsPath = path.join(dataDir, "tracks-with-lyrics.json");
-    await writeFile(
-      tracksWithLyricsPath,
-      JSON.stringify(tracksWithLyrics, null, 2)
-    );
-    console.log(`\nTracks with lyrics saved to: ${tracksWithLyricsPath}`);
+      // Check if files exist
+      try {
+        const tracksData = await readFile(tracksWithLyricsPath, "utf-8");
+        tracksWithLyrics = JSON.parse(tracksData);
+        console.log(
+          `✓ Loaded ${tracksWithLyrics.length} tracks from JSON file`
+        );
+      } catch (error) {
+        console.error(
+          "✗ Error: tracks-with-lyrics.json not found. Please run the full pipeline first."
+        );
+        console.error(
+          "   Run without --db-only flag to fetch data and lyrics first."
+        );
+        process.exit(1);
+      }
+
+      // Load original records for streaming history
+      records = await loadSpotifyJsonFiles();
+    } else {
+      // Phase 1: Load all Spotify JSON files
+      records = await loadSpotifyJsonFiles();
+
+      // Phase 2: Extract unique tracks
+      const uniqueTracks = extractUniqueTracks(records);
+
+      // Output results to console
+      console.log("\n=== Unique Tracks Extracted ===");
+      console.log(`Total records: ${records.length}`);
+      console.log(`Unique tracks: ${uniqueTracks.length}`);
+
+      console.log("\nSample tracks:");
+      uniqueTracks.slice(0, 5).forEach((track) => {
+        console.log(`  - ${track.trackName} by ${track.artistName}`);
+      });
+
+      // Save extracted tracks to JSON file for inspection
+      const extractedTracksPath = path.join(dataDir, "extracted-tracks.json");
+      await writeFile(
+        extractedTracksPath,
+        JSON.stringify(uniqueTracks, null, 2)
+      );
+      console.log(`\nExtracted tracks saved to: ${extractedTracksPath}`);
+
+      // Phase 2: Fetch lyrics for all tracks
+      tracksWithLyrics = await fetchAllLyrics(uniqueTracks);
+
+      // Save tracks with lyrics to JSON file
+      const tracksWithLyricsPath = path.join(
+        dataDir,
+        "tracks-with-lyrics.json"
+      );
+      await writeFile(
+        tracksWithLyricsPath,
+        JSON.stringify(tracksWithLyrics, null, 2)
+      );
+      console.log(`\nTracks with lyrics saved to: ${tracksWithLyricsPath}`);
+    }
 
     // Phase 3: Database insertion
     await seedDatabase(records, tracksWithLyrics);
