@@ -9,9 +9,13 @@ import { useState, FormEvent } from "react";
 export function SearchInput({
   initialQuery,
   currentPerPage,
+  placeholder = "Search ...",
+  url = "/search",
 }: {
   initialQuery: string;
   currentPerPage: number;
+  placeholder?: string;
+  url?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -26,14 +30,14 @@ export function SearchInput({
       params.set("perPage", currentPerPage.toString());
     }
     const queryString = params.toString();
-    router.push(queryString ? `/search?${queryString}` : "/search");
+    router.push(queryString ? `${url}?${queryString}` : url);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2 max-w-md flex-1">
       <Input
         type="text"
-        placeholder="Search emails..."
+        placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="flex-1 flex-shrink-0"
