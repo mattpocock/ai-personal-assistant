@@ -22,6 +22,7 @@ import {
   MessageSquareIcon,
   PlusIcon,
   SearchIcon,
+  MusicIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -125,6 +126,17 @@ export function SideBar({
                   <Link href="/search">
                     <DatabaseIcon />
                     Data
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/song-search"}
+                  asChild
+                >
+                  <Link href="/track-search">
+                    <MusicIcon />
+                    Tracks
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
