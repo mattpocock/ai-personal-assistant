@@ -4,6 +4,9 @@ import "dotenv/config";
 import { readFile, writeFile, readdir } from "fs/promises";
 import path from "path";
 import prisma from "../lib/prisma.js";
+import { google } from "@ai-sdk/google";
+import { embedMany } from "ai";
+import { writeLyricsEmbedding } from "../src/app/embeddings.js";
 
 // Types
 interface SpotifyStreamingRecord {
@@ -443,11 +446,100 @@ async function verifySeeding(): Promise<void> {
   console.log(`  History records linked to tracks: ${historyWithTracks}`);
 }
 
+/**
+ * Generate embeddings for all tracks with lyrics
+ */
+async function generateEmbeddings(): Promise<void> {
+  console.log("\n=== Phase 4: Generating Embeddings ===");
+
+  try {
+    // Fetch all tracks with lyrics from the database
+    const tracksWithLyrics = await prisma.track.findMany({
+      where: {
+        lyrics: { isNot: null },
+      },
+      include: {
+        lyrics: true,
+      },
+    });
+
+    console.log(`Found ${tracksWithLyrics.length} tracks with lyrics to process`);
+
+    if (tracksWithLyrics.length === 0) {
+      console.log("No tracks with lyrics found. Skipping embeddings generation.");
+      return;
+    }
+
+    const BATCH_SIZE = 99;
+    let totalProcessed = 0;
+
+    for (let i = 0; i < tracksWithLyrics.length; i += BATCH_SIZE) {
+      const batch = tracksWithLyrics.slice(i, i + BATCH_SIZE);
+      console.log(
+        `Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
+          tracksWithLyrics.length / BATCH_SIZE
+        )}`
+      );
+
+      // Generate text representations for embedding
+      const textRepresentations = batch.map((track) => {
+        const lyricsText = track.lyrics?.lyricsBody || "";
+        return `${track.trackName} ${track.artistName} ${track.albumName}: \n${lyricsText}`;
+      });
+
+      // Generate embeddings for the batch
+      const { embeddings } = await embedMany({
+        model: google.textEmbeddingModel("text-embedding-004"),
+        values: textRepresentations,
+      });
+
+      // Store embeddings in the database
+      for (let j = 0; j < batch.length; j++) {
+        const track = batch[j];
+        const embedding = embeddings[j];
+
+        if (track.lyrics) {
+          // Use the lyrics ID (CUID string) directly
+          await writeLyricsEmbedding(track.lyrics.id, embedding);
+          totalProcessed++;
+        }
+      }
+
+      console.log(`  ✓ Processed ${batch.length} embeddings`);
+    }
+
+    console.log(`\n✓ Generated embeddings for ${totalProcessed} tracks!`);
+  } catch (error) {
+    console.error("\n✗ Embeddings generation failed:");
+    console.error(error);
+    throw error;
+  }
+}
+
 // Main Function
 
 export async function main() {
-  // Check for --db-only flag to skip data loading and lyrics fetching
+  // Check for flags
   const dbOnly = process.argv.includes("--db-only");
+  const embeddingsOnly = process.argv.includes("--embeddings-only");
+  const skipEmbeddings = process.argv.includes("--skip-embeddings");
+
+  if (embeddingsOnly) {
+    console.log(
+      "=== Spotify Data Loading Script - Phase 4 Only: Embeddings Generation ===\n"
+    );
+    try {
+      await generateEmbeddings();
+      console.log("\n=== Embeddings Generation Completed Successfully! ===");
+    } catch (error) {
+      console.error("\n=== Error during embeddings generation ===");
+      console.error(error);
+      process.exit(1);
+    } finally {
+      await prisma.$disconnect();
+    }
+    return;
+  }
 
   if (dbOnly) {
     console.log(
@@ -456,7 +548,7 @@ export async function main() {
     console.log("Loading data from existing JSON files...\n");
   } else {
     console.log(
-      "=== Spotify Data Loading Script - Phase 3: Complete Pipeline ===\n"
+      "=== Spotify Data Loading Script - Complete Pipeline ===\n"
     );
   }
 
@@ -536,6 +628,13 @@ export async function main() {
 
     // Verify seeding results
     await verifySeeding();
+
+    // Phase 4: Generate embeddings (optional)
+    if (!skipEmbeddings) {
+      await generateEmbeddings();
+    } else {
+      console.log("\n⏭  Skipping embeddings generation (use --embeddings-only to run later)");
+    }
 
     console.log("\n=== All Phases Completed Successfully! ===");
   } catch (error) {
