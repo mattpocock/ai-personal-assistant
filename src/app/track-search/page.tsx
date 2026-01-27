@@ -1,18 +1,22 @@
 import { TopBar } from "@/components/top-bar";
-import { EmailList } from "../search/email-list";
 import { SearchPagination } from "../search/search-pagination";
 import { PerPageSelector } from "../search/per-page-selector";
 import { loadChats, loadMemories } from "@/lib/persistence-layer";
 import { CHAT_LIMIT } from "../page";
 import { SideBar } from "@/components/side-bar";
-import { loadEmails, searchEmailsWithRRF } from "../search";
 import { SearchInput } from "../search/search-input";
-import { loadTracks } from "@/lib/db";
 import { Lyrics, Track } from "../generated/prisma/client";
 import { TrackList } from "./track-list";
+import { searchLyricsWithRRF, searchWithEmbeddings } from "../search-db";
+import { getAllEmbeddings } from "../generated/prisma/sql";
+import prisma from "../../../lib/prisma";
 
 export type TrackWithLyrics = Track & {
   lyrics: Lyrics | null;
+};
+
+export type TrackWithScore = TrackWithLyrics & {
+  score: number;
 };
 
 export default async function TrackSearchPage(props: {
@@ -22,34 +26,31 @@ export default async function TrackSearchPage(props: {
   const query = searchParams.q || "";
   const page = Number(searchParams.page) || 1;
   const perPage = Number(searchParams.perPage) || 10;
+  const tracksWithEmbeddings = await prisma.$queryRawTyped(getAllEmbeddings());
 
-  const allTracks = await loadTracks();
+  const tracksWithScores = await searchLyricsWithRRF(
+    query,
+    tracksWithEmbeddings
+  );
 
-  //const emailsWithScores = await searchEmailsWithRRF(query, allTracks);
-
-  // Transform emails to match the expected format
-  /*  const transformedEmails = emailsWithScores
-    .map(({ item: email, score }) => ({
-      id: email.id,
-      from: email.from,
-      subject: email.subject,
-      preview: email.chunk.substring(0, 100) + "...",
-      content: email.chunk,
-      date: email.timestamp,
-      score: score,
-      chunkIndex: email.index,
-      totalChunks: email.totalChunks,
+  const transformedTracks: TrackWithScore[] = tracksWithScores
+    .map(({ item, score }) => ({
+      ...item,
+      score,
     }))
-    .sort((a, b) => b.score - a.score); */
+    .sort((a, b) => b.score - a.score);
 
-  // Filter emails based on search query
-  /* const filteredEmails = query
-    ? transformedEmails.filter((email) => email.score > 0)
-    : transformedEmails; */
+  // Filter tracks based on search query
+  const filteredTracks = query
+    ? transformedTracks.filter((track) => track.score > 0)
+    : transformedTracks;
 
-  const totalPages = Math.ceil(allTracks.length / perPage);
+  const totalPages = Math.ceil(filteredTracks.length / perPage);
   const startIndex = (page - 1) * perPage;
-  const paginatedTracks = allTracks.slice(startIndex, startIndex + perPage);
+  const paginatedTracks = filteredTracks.slice(
+    startIndex,
+    startIndex + perPage
+  );
   const allChats = await loadChats();
   const chats = allChats.slice(0, CHAT_LIMIT);
   const memories = await loadMemories();
@@ -72,6 +73,7 @@ export default async function TrackSearchPage(props: {
                 initialQuery={query}
                 currentPerPage={perPage}
                 placeholder="Search tracks..."
+                url="/track-search"
               />
               <PerPageSelector currentPerPage={perPage} query={query} />
             </div>
@@ -81,13 +83,13 @@ export default async function TrackSearchPage(props: {
                 <p className="text-sm text-muted-foreground">
                   {query ? (
                     <>
-                      Found {allTracks.length} result
-                      {allTracks.length !== 1 ? "s" : ""} for &ldquo;
+                      Found {filteredTracks.length} result
+                      {filteredTracks.length !== 1 ? "s" : ""} for &ldquo;
                       {query}
                       &rdquo;
                     </>
                   ) : (
-                    <>Found {allTracks.length} tracks</>
+                    <>Found {filteredTracks.length} tracks</>
                   )}
                 </p>
               </div>
