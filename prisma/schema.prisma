@@ -1,66 +1,53 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/app/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/app/generated/prisma"
+  previewFeatures = ["typedSql"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Track model - Normalized track information
 model Track {
-  id                String                    @id @default(cuid())
-  spotifyTrackUri   String                    @unique @map("spotify_track_uri")
-  trackName         String                    @map("track_name")
-  artistName        String                    @map("artist_name")
-  albumName         String                    @map("album_name")
-  genre             String?                   @map("genre")
-  createdAt         DateTime                  @default(now()) @map("created_at")
-  updatedAt         DateTime                  @updatedAt @map("updated_at")
-
-  // Relations
-  streamingHistory  SpotifyStreamingHistory[]
-  lyrics            Lyrics?
+  id               String                    @id @default(cuid())
+  spotifyTrackUri  String                    @unique @map("spotify_track_uri")
+  trackName        String                    @map("track_name")
+  artistName       String                    @map("artist_name")
+  albumName        String                    @map("album_name")
+  genre            String?                   @map("genre")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  lyrics           Lyrics?
+  streamingHistory SpotifyStreamingHistory[]
 
   @@index([artistName])
   @@index([genre])
   @@map("tracks")
 }
 
-// SpotifyStreamingHistory model - Individual streaming events
 model SpotifyStreamingHistory {
-  id                     String    @id @default(cuid())
-  trackId                String?   @map("track_id")
-  ts                     DateTime
-  platform               String
-  msPlayed               Int       @map("ms_played")
-  connCountry            String    @map("conn_country")
-  ipAddr                 String?   @map("ip_addr")
-  reasonStart            String    @map("reason_start")
-  reasonEnd              String    @map("reason_end")
-  shuffle                Boolean   @default(false)
-  skipped                Boolean   @default(false)
-  offline                Boolean   @default(false)
-  offlineTimestamp       DateTime? @map("offline_timestamp")
-  incognitoMode          Boolean   @default(false) @map("incognito_mode")
-
-  // Episode/Audiobook support (nullable)
-  episodeName            String?   @map("episode_name")
-  episodeShowName        String?   @map("episode_show_name")
-  spotifyEpisodeUri      String?   @map("spotify_episode_uri")
-  audiobookTitle         String?   @map("audiobook_title")
-  audiobookUri           String?   @map("audiobook_uri")
-  audiobookChapterUri    String?   @map("audiobook_chapter_uri")
-  audiobookChapterTitle  String?   @map("audiobook_chapter_title")
-
-  // Relations
-  track                  Track?    @relation(fields: [trackId], references: [id])
+  id                    String    @id @default(cuid())
+  trackId               String?   @map("track_id")
+  ts                    DateTime
+  platform              String
+  msPlayed              Int       @map("ms_played")
+  connCountry           String    @map("conn_country")
+  ipAddr                String?   @map("ip_addr")
+  reasonStart           String    @map("reason_start")
+  reasonEnd             String    @map("reason_end")
+  shuffle               Boolean   @default(false)
+  skipped               Boolean   @default(false)
+  offline               Boolean   @default(false)
+  offlineTimestamp      DateTime? @map("offline_timestamp")
+  incognitoMode         Boolean   @default(false) @map("incognito_mode")
+  episodeName           String?   @map("episode_name")
+  episodeShowName       String?   @map("episode_show_name")
+  spotifyEpisodeUri     String?   @map("spotify_episode_uri")
+  audiobookTitle        String?   @map("audiobook_title")
+  audiobookUri          String?   @map("audiobook_uri")
+  audiobookChapterUri   String?   @map("audiobook_chapter_uri")
+  audiobookChapterTitle String?   @map("audiobook_chapter_title")
+  track                 Track?    @relation(fields: [trackId], references: [id])
 
   @@index([ts])
   @@index([trackId])
@@ -68,17 +55,26 @@ model SpotifyStreamingHistory {
   @@map("spotify_streaming_history")
 }
 
-// Lyrics model - One-to-one with Track
 model Lyrics {
-  id              String   @id @default(cuid())
-  trackId         String   @unique @map("track_id")
-  lyricsBody      String   @map("lyrics_body") @db.Text
-  lyricsLanguage  String   @map("lyrics_language")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  track           Track    @relation(fields: [trackId], references: [id])
+  id             String           @id @default(cuid())
+  trackId        String           @unique @map("track_id")
+  lyricsBody     String           @map("lyrics_body")
+  lyricsLanguage String           @map("lyrics_language")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  track          Track            @relation(fields: [trackId], references: [id])
+  embedding      LyricsEmbedding?
 
   @@map("lyrics")
+}
+
+model LyricsEmbedding {
+  id        String                 @id @map("lyrics_id")
+  embedding Unsupported("vector")?
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @default(now()) @updatedAt @map("updated_at")
+  lyrics    Lyrics                 @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@index([id])
+  @@map("lyrics_embeddings")
 }
