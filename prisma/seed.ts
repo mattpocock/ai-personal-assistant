@@ -463,10 +463,14 @@ async function generateEmbeddings(): Promise<void> {
       },
     });
 
-    console.log(`Found ${tracksWithLyrics.length} tracks with lyrics to process`);
+    console.log(
+      `Found ${tracksWithLyrics.length} tracks with lyrics to process`
+    );
 
     if (tracksWithLyrics.length === 0) {
-      console.log("No tracks with lyrics found. Skipping embeddings generation.");
+      console.log(
+        "No tracks with lyrics found. Skipping embeddings generation."
+      );
       return;
     }
 
@@ -489,7 +493,7 @@ async function generateEmbeddings(): Promise<void> {
 
       // Generate embeddings for the batch
       const { embeddings } = await embedMany({
-        model: google.textEmbeddingModel("text-embedding-004"),
+        model: google.textEmbeddingModel("gemini-embedding-001"),
         values: textRepresentations,
       });
 
@@ -547,9 +551,7 @@ export async function main() {
     );
     console.log("Loading data from existing JSON files...\n");
   } else {
-    console.log(
-      "=== Spotify Data Loading Script - Complete Pipeline ===\n"
-    );
+    console.log("=== Spotify Data Loading Script - Complete Pipeline ===\n");
   }
 
   try {
@@ -633,7 +635,9 @@ export async function main() {
     if (!skipEmbeddings) {
       await generateEmbeddings();
     } else {
-      console.log("\n⏭  Skipping embeddings generation (use --embeddings-only to run later)");
+      console.log(
+        "\n⏭  Skipping embeddings generation (use --embeddings-only to run later)"
+      );
     }
 
     console.log("\n=== All Phases Completed Successfully! ===");
