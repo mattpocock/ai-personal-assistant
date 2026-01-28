@@ -7,7 +7,7 @@ import { SideBar } from "@/components/side-bar";
 import { SearchInput } from "../search/search-input";
 import { Lyrics, Track } from "../generated/prisma/client";
 import { TrackList } from "./track-list";
-import { searchLyricsWithRRF, searchWithEmbeddings } from "../search-db";
+import { searchLyricsWithRRF, toTrackType } from "../search-db";
 import { getAllEmbeddings } from "../generated/prisma/sql";
 import prisma from "../../../lib/prisma";
 
@@ -28,10 +28,12 @@ export default async function TrackSearchPage(props: {
   const perPage = Number(searchParams.perPage) || 10;
   const tracksWithEmbeddings = await prisma.$queryRawTyped(getAllEmbeddings());
 
-  const tracksWithScores = await searchLyricsWithRRF(
-    query,
-    tracksWithEmbeddings
-  );
+  const tracksWithScores = query
+    ? await searchLyricsWithRRF(query, tracksWithEmbeddings)
+    : tracksWithEmbeddings.map((track) => ({
+        item: toTrackType(track),
+        score: 0,
+      }));
 
   const transformedTracks: TrackWithScore[] = tracksWithScores
     .map(({ item, score }) => ({
