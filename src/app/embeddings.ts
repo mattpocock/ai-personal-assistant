@@ -10,7 +10,7 @@ import crypto from "crypto";
 import fs from "fs/promises";
 
 const CACHE_DIR = path.join(process.cwd(), "data", "embeddings");
-const CACHE_KEY = "google-text-embedding-004";
+const CACHE_KEY = "google-gemini-embedding-001";
 
 export const ensureEmbeddingsCacheDirectory = async () => {
   await fs.mkdir(CACHE_DIR, { recursive: true });
@@ -42,10 +42,13 @@ export const getCachedEmbedding = async (
   }
 };
 
-export const writeEmbeddingToCache = async (content: string, embedding: number[]): Promise<void> => {
+export const writeEmbeddingToCache = async (
+  content: string,
+  embedding: number[]
+): Promise<void> => {
   const filePath = getEmbeddingFilePath(content);
   await fs.writeFile(filePath, JSON.stringify(embedding), "utf-8");
-}
+};
 
 /**
  * Get a cached embedding for a lyrics record by ID
