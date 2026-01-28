@@ -65,7 +65,7 @@ export async function searchWithEmbeddings<
   toTtype: (incorrectType: K) => T
 ): Promise<{ item: T; score: number }[]> {
   const { embedding: queryEmbedding } = await embed({
-    model: google.textEmbeddingModel("text-embedding-004"),
+    model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
   });
   const results = items.map((item) => {

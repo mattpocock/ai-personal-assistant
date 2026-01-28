@@ -119,7 +119,7 @@ evalite.each([
           question: input.map(messageToText).join("\n"),
           answer: output.text,
           reference: expected,
-          embeddingModel: google.textEmbeddingModel("text-embedding-004"),
+          embeddingModel: google.textEmbeddingModel("gemini-embedding-001"),
           model: google("gemini-2.5-flash-lite"),
         });
       },

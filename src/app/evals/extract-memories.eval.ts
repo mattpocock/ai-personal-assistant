@@ -103,7 +103,7 @@ evalite.each([
           // ADDED: Expected memories from test data
           reference: expected,
           // ADDED: Use text embedding model for semantic similarity comparison
-          embeddingModel: google.textEmbeddingModel("text-embedding-004"),
+          embeddingModel: google.textEmbeddingModel("gemini-embedding-001"),
         });
       },
     },

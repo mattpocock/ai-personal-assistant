@@ -110,7 +110,7 @@ export async function loadOrGenerateEmbeddings<T>(
       )}`
     );
     const { embeddings } = await embedMany({
-      model: google.textEmbeddingModel("text-embedding-004"),
+      model: google.textEmbeddingModel("gemini-embedding-001"),
       values: batch.map((e) => toText(e)),
     });
     for (let j = 0; j < batch.length; j++) {
@@ -132,7 +132,7 @@ export async function searchWithEmbeddings<T>(
 ): Promise<{ item: T; score: number }[]> {
   const embeddings = await loadOrGenerateEmbeddings<T>(items, toText);
   const { embedding: queryEmbedding } = await embed({
-    model: google.textEmbeddingModel("text-embedding-004"),
+    model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
   });
   const results = embeddings.map(({ item, embedding }) => {
